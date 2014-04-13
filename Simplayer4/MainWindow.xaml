@@ -300,7 +300,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="textArtist" Text="ver.4" FontSize="12" Margin="10,35,5,0" Foreground="{DynamicResource sColor}" TextTrimming="CharacterEllipsis" VerticalAlignment="Top"/>
+                            <TextBlock x:Name="textArtist" Text="ver 4" FontSize="12" Margin="10,35,5,0" Foreground="{DynamicResource sColor}" TextTrimming="CharacterEllipsis" VerticalAlignment="Top"/>
                             <TextBlock x:Name="textAlbum" Text="" FontSize="12" Margin="5,35,10,0" Foreground="Gray" Grid.Column="1" VerticalAlignment="Top" TextTrimming="CharacterEllipsis"/>
                         </Grid>
 

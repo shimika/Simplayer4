@@ -39,6 +39,7 @@ namespace Simplayer4 {
 		public LyricsWindow lyrWindow;
 		bool OneTimeCancel = false;
 		Color mainColor = Colors.SlateBlue;
+		string version = "ver 4.0.2";
 
 		public MainWindow() {
 			InitializeComponent();
@@ -206,7 +207,6 @@ namespace Simplayer4 {
 				return;
 			}
 
-
 			// Indexer shortcut
 
 			int nKeyIndex = -1, nStart = 15, nEnd = 40;
@@ -289,9 +289,9 @@ namespace Simplayer4 {
 			if (Pref.isSorted) { ListOrder.RefreshIndexer(); }
 		}
 
-
 		List<SongData> listSong = null;
 		private void InitPlayer() {
+			textArtist.Text = version;
 			FileIO.ReadPreference();
 
 			if (Pref.nTheme < 6) {
@@ -478,7 +478,7 @@ namespace Simplayer4 {
 			rectPlayTime.Width = Pref.isPlaying = 0;
 
 			textTitle.Text = "Simplayer4";
-			textArtist.Text = "ver.4"; textAlbum.Text = "";
+			textArtist.Text = version; textAlbum.Text = "";
 			imageAlbumart.Source = TagLibrary.rtSource("noImage.png");
 
 			lyrWindow.lS.Text = "";
@@ -493,6 +493,7 @@ namespace Simplayer4 {
 			if (SongData.nNowPlaying >= 0 && SongData.DictSong.ContainsKey(SongData.nNowPlaying)) {
 				((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
 			}
+			SongData.nNowPlaying = -1;
 
 			PlayClass.mp.Stop();
 		}

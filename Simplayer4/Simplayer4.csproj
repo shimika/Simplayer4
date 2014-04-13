@@ -94,6 +94,7 @@
     </Compile>
     <Compile Include="CondensedTextBlock.cs" />
     <Compile Include="CustomControl.cs" />
+    <Compile Include="EventHandler.cs" />
     <Compile Include="FileAssociate.cs" />
     <Compile Include="FileIO.cs" />
     <Compile Include="ListOrder.cs" />

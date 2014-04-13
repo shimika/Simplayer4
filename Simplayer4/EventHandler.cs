@@ -9,7 +9,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 
 namespace Simplayer4 {
 	public partial class MainWindow : Window {
@@ -150,6 +152,30 @@ namespace Simplayer4 {
 			RefreshSongList(listAdd);
 		}
 
+		private void FileAdd(List<SongData> listAdd) {
+			// Extract Sort Index
+			foreach (SongData sData in listAdd) {
+				char cHead = FileIO.HangulDevide(sData.strTitle.ToUpper())[0];
+				int idx = FileIO.strIndexCaption.IndexOf(cHead);
+				if (idx < 0) { idx += FileIO.strIndexCaption.Length; }
+
+				sData.strSortTag = string.Format("{0:D3}{1}", idx, sData.strTitle);
+				sData.nHeadIndex = FileIO.strIndexUnique.IndexOf(FileIO.strIndexValue[idx]);
+				sData.nID = SongData.nCount;
+
+				listSong.Add(sData);
+				SongData.DictSong.Add(SongData.nCount, sData);
+				SongData.nCount++;
+
+				Grid grid = CustomControl.GetListItemButton(sData, true);
+				SongData.DictSong[sData.nID].gBase = grid;
+				stackList.Children.Add(grid);
+
+				((Button)grid.Children[3]).Click += SongListItem_Click;
+				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
+			}
+		}
+
 		#endregion
 
 		#region Indexer event
@@ -251,5 +277,162 @@ namespace Simplayer4 {
 			rectVolume.Width = mouseMovingPixel;
 		}
 		#endregion
+
+		private void ToggleList() {
+			Pref.isListVisible = !Pref.isListVisible;
+			double nTowardHeight = Pref.isListVisible ? Pref.nListHeight : 192;
+			if (!Pref.isListVisible) {
+				gridIndexerRoot.Visibility = Visibility.Collapsed;
+				this.MinHeight = 192;
+				Pref.nListHeight = this.ActualHeight;
+			} else { this.MaxHeight = 3000; }
+
+			buttonHideList.Visibility = Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
+			buttonShowList.Visibility = Pref.isListVisible ? Visibility.Collapsed : Visibility.Visible;
+
+			if (Pref.isPrefVisible && !Pref.isListVisible) {
+				buttonPref.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+			}
+
+			Storyboard sb = new Storyboard();
+			DoubleAnimation da = new DoubleAnimation(this.ActualHeight, nTowardHeight, TimeSpan.FromMilliseconds(300)) {
+				BeginTime = TimeSpan.FromMilliseconds(100),
+				EasingFunction = new PowerEase() {
+					Power = 4, EasingMode = EasingMode.EaseInOut
+				}
+			};
+			Storyboard.SetTarget(da, this);
+			Storyboard.SetTargetProperty(da, new PropertyPath(Window.HeightProperty));
+			sb.Children.Add(da);
+			sb.Completed += delegate(object sender, EventArgs e) {
+				if (Pref.isListVisible) {
+					this.MinHeight = 540;
+				} else {
+					this.MaxHeight = 192;
+				}
+			};
+			sb.Begin(this);
+			FileIO.SavePreference();
+		}
+
+		private IntPtr MainWindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
+			if (msg == Win32.WM_HOTKEY && Pref.isHotkeyOn) {
+				if (wParam.ToString() == PPkey.ToString()) {
+					TogglePlayingStatus();
+				} else if (wParam.ToString() == Stopkey.ToString()) {
+					StopPlayer();
+				} else if (wParam.ToString() == Prevkey.ToString()) {
+					if (SongData.nNowPlaying >= 0) {
+						PlayClass.MusicPrepare(SongData.nNowPlaying, -1 * Pref.nRandomSeed, true);
+					}
+				} else if (wParam.ToString() == Nextkey.ToString()) {
+					if (SongData.nNowPlaying >= 0) {
+						PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, true);
+					}
+				} else if (wParam.ToString() == Lyrkey.ToString()) {
+					Pref.isLyricsVisible = !Pref.isLyricsVisible;
+					buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+					buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+
+					lyrWindow.ToggleLyrics(Pref.isLyricsVisible);
+					cLyrWindow.Checked = Pref.isLyricsVisible;
+					FileIO.SavePreference();
+				} else if (wParam.ToString() == SynPkey.ToString()) {
+					if (Pref.isPlaying != 0) {
+						lyrWindow.ChangeOffset(-200);
+					}
+				} else if (wParam.ToString() == SynNkey.ToString()) {
+					if (Pref.isPlaying != 0) {
+						lyrWindow.ChangeOffset(200);
+					}
+				} else if (wParam.ToString() == LaunchKey.ToString()) {
+					ActivateWindow();
+					if (!Pref.isListVisible) { ToggleList(); }
+				}
+				handled = true;
+			}
+			return IntPtr.Zero;
+		}
+
+		private void ActivateWindow() {
+			if (Pref.isTray) {
+				this.WindowState = WindowState.Normal;
+				Pref.isShowing = true;
+				this.Topmost = false;
+				this.Topmost = Pref.isTopMost;
+
+				new AltTab().ShowAltTab(this);
+				this.BeginAnimation(Window.OpacityProperty,
+					new DoubleAnimation(1, TimeSpan.FromMilliseconds(200)) {
+						EasingFunction = new QuarticEase() { EasingMode = EasingMode.EaseOut }
+					});
+				this.Activate();
+			} else {
+				this.WindowState = WindowState.Normal;
+			}
+		}
+
+		private void ShowMessage(string message, double dTimeout) {
+			Storyboard sb = new Storyboard();
+
+			if (dTimeout > 0) {
+				ThicknessAnimation ta1 = new ThicknessAnimation(new Thickness(0, -30, 0, 0), TimeSpan.FromMilliseconds(200)) {
+					BeginTime = TimeSpan.FromMilliseconds(100),
+					EasingFunction = new ExponentialEase() { Exponent = 5, EasingMode = EasingMode.EaseOut },
+				};
+				textMessage.Text = message;
+				Storyboard.SetTarget(ta1, gridMessage);
+				Storyboard.SetTargetProperty(ta1, new PropertyPath(Grid.MarginProperty));
+				sb.Children.Add(ta1);
+			}
+
+			ThicknessAnimation ta2 = new ThicknessAnimation(new Thickness(0), TimeSpan.FromMilliseconds(200)) {
+				BeginTime = TimeSpan.FromSeconds(dTimeout),
+				EasingFunction = new ExponentialEase() { Exponent = 5, EasingMode = EasingMode.EaseOut },
+			};
+
+			Storyboard.SetTarget(ta2, gridMessage);
+			Storyboard.SetTargetProperty(ta2, new PropertyPath(Grid.MarginProperty));
+
+			sb.Children.Add(ta2);
+			sb.Begin(this);
+		}
+
+		public bool ProcessCommandLineArgs(IList<string> args) {
+			ActivateWindow();
+			if (!Pref.isListVisible) { ToggleList(); }
+
+			if (args == null || args.Count == 0) { return true; }
+
+			return true;
+		}
+
+		public void ChangeThemeColor(Color color, bool isSave = true) {
+			mainColor = color;
+			grideffectShadow.BeginAnimation(DropShadowEffect.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
+			gStop1.BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
+
+			Application.Current.Resources["sColor"] = new SolidColorBrush(mainColor);
+			Application.Current.Resources["cColor"] = Color.FromArgb(255, mainColor.R, mainColor.G, mainColor.B);
+			CustomControl.sColor = sColor = FindResource("sColor") as SolidColorBrush;
+
+			if (isSave) { FileIO.SavePreference(); }
+		}
+
+		private void imageAlbumart_MouseDown(object sender, MouseButtonEventArgs e) {
+			if (SongData.nNowSelected < 0 || !SongData.DictSong.ContainsKey(SongData.nNowPlaying)) { return; }
+
+
+			if (SongData.nNowSelected >= 0 && SongData.DictSong.ContainsKey(SongData.nNowSelected)) {
+				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Normal;
+				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).Foreground = Brushes.Black;
+			}
+			SongData.nNowSelected = SongData.nNowPlaying;
+
+			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
+			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
+
+			ScrollingList(SongData.DictSong[SongData.nNowPlaying].nPosition, 0);
+		}
 	}
 }

@@ -120,8 +120,6 @@ namespace Simplayer4 {
 		}	
 		
 
-
-
 		private void TogglePlayingStatus() {
 			switch (Pref.isPlaying) {
 				case -1: PlayClass.ResumeMusic(); break;

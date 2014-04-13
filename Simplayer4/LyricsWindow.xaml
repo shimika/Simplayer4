@@ -1,0 +1,26 @@
+﻿<Window x:Class="Simplayer4.LyricsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" ShowInTaskbar="False"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" AllowsTransparency="True" Focusable="False"
+        Title="LyricsWindow" x:Name="windowLyrics" Height="110" IsHitTestVisible="False" Topmost="True" Width="700" WindowStyle="None"  ResizeMode="NoResize" Background="Transparent" ShowActivated="False">
+    <Grid x:Name="gridBack" Background="Black" Opacity="0" IsHitTestVisible="False">
+        <StackPanel>
+            <StackPanel Height="20" Orientation="Horizontal" Visibility="Visible">
+                <TextBlock Height="20" Margin="15,5,0,0" Text="" MaxWidth="500" Width="500" Foreground="LightGray" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" x:Name="lS" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+                <TextBlock Height="20" Margin="5,5,0,0" Text="Offset:0ms" MaxWidth="100" Width="100" Foreground="LightGray" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" x:Name="lO" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+                <TextBlock Height="20" Margin="5,5,0,0" Text="00:00 / 00:00" MaxWidth="80" Width="120" Foreground="LightGray" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" x:Name="lT" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+            </StackPanel>
+            <Grid Height="25" Margin="0,5,0,0">
+                <TextBlock Height="25" Text="Simplayer4" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="L1" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+                <TextBlock Height="25" Text="" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="R1" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" Opacity="0" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+            </Grid>
+            <Grid Height="25" Margin="0,3,0,0">
+                <TextBlock Height="25" Text="" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="L2" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+                <TextBlock Height="25" Text="" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="R2" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" Opacity="0" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+            </Grid>
+            <Grid Height="25" Margin="0,3,0,0">
+                <TextBlock Height="25" Text="" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="L3" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+                <TextBlock Height="25" Text="" MaxWidth="680" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" x:Name="R3" FontFamily="Century Gothic" TextTrimming="CharacterEllipsis" Opacity="0" TextOptions.TextRenderingMode="ClearType" TextOptions.TextFormattingMode="Ideal" TextOptions.TextHintingMode="Animated"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Window>

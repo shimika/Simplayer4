@@ -94,9 +94,8 @@ namespace Simplayer4 {
 
 			if (!dictLyrics.ContainsKey(songMD5)) {
 				string strLyrics;
-				string strOffset = "0";
 
-				if (lyr.GetLyricsFromFile(strPath, true)) {
+				if (lyr.GetLyricsFromFile(strPath)) {
 					strLyrics = lyr.LyricLists[0];
 
 					string strBefore = "";

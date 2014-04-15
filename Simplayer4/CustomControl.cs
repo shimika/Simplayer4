@@ -73,13 +73,14 @@ namespace Simplayer4 {
 				Opacity = 0.3, Margin = new Thickness(15, 0, 15, 0),
 			};
 			rect.SetResourceReference(Rectangle.FillProperty, "sColor");
+
 			Grid gridPlayImage = new Grid() {
 				Width = 24, Height = 24,
 				HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(10, 4, 0, 0),
-				Visibility = Visibility.Collapsed,
+				Visibility = Visibility.Visible,
 			};
-			gridPlayImage.SetResourceReference(Grid.BackgroundProperty, "sColor");
-			gridPlayImage.OpacityMask = new ImageBrush(rtSource("iconPlaying0.png"));
+			//gridPlayImage.SetResourceReference(Grid.BackgroundProperty, "sColor");
+			//gridPlayImage.OpacityMask = new ImageBrush(rtSource("iconPlaying0.png"));
 
 			Polygon polyNew = new Polygon() { HorizontalAlignment = HorizontalAlignment.Left, Visibility = Visibility.Collapsed, Opacity = 0.7 };
 			polyNew.SetResourceReference(Polygon.FillProperty, "sColor");

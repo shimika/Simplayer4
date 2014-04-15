@@ -131,7 +131,10 @@ namespace Simplayer4 {
 
 		public static void PlayMusic(int nId, int nDirection, bool isShowPreview) {
 			if (SongData.nNowPlaying >= 0 && SongData.DictSong.ContainsKey(SongData.nNowPlaying)) {
-				((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
+				//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
+				try {
+					((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Clear();
+				} catch { }
 			}
 			SongData.nNowPlaying = nId;
 
@@ -179,7 +182,9 @@ namespace Simplayer4 {
 			if (noti.Length > 60) { noti = noti.Substring(0, 60) + "..."; }
 			winMain.ni.Text = noti.Replace('&', '＆');
 
-			((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Visible;
+
+			//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Visible;
+			((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Add(winMain.GridNowPlay);
 			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).TextDecorations = null;
 
 			if (SongData.DictSong[SongData.nNowPlaying].strTitle != nowPlayingData.strTitle) {

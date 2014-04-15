@@ -40,6 +40,9 @@ namespace Simplayer4 {
 		bool OneTimeCancel = false;
 		Color mainColor = Colors.SlateBlue;
 		string version = "ver 4.0.2";
+		public Grid GridNowPlay = null;
+		ImageBrush[] imgNowPlayArray = new ImageBrush[3];
+		int OpacityMaskIndex = 0;
 
 		public MainWindow() {
 			InitializeComponent();
@@ -404,6 +407,26 @@ namespace Simplayer4 {
 					ChangeThemeColor(Pref.cTheme);
 				}
 			};
+
+			// 재생 중 이미지
+			for (int i = 0; i < 3; i++) {
+				imgNowPlayArray[i] = new ImageBrush(CustomControl.rtSource(string.Format("iconPlaying{0}.png", i)));
+			}
+
+			GridNowPlay = new Grid() {
+				Width = 24, Height = 24,
+				HorizontalAlignment = HorizontalAlignment.Left,
+			};
+			GridNowPlay.SetResourceReference(Grid.BackgroundProperty, "sColor");
+			GridNowPlay.OpacityMask = imgNowPlayArray[0];
+
+			DispatcherTimer dtmOverlay = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(300), IsEnabled = true };
+			dtmOverlay.Tick += dtmOverlay_Tick;
+		}
+
+		private void dtmOverlay_Tick(object sender, EventArgs e) {
+			if (Pref.isPlaying <= 0) { return; }
+			GridNowPlay.OpacityMask = imgNowPlayArray[(++OpacityMaskIndex) % 3];
 		}
 
 		private void OptionColorBinder(TextBlock txt, bool b) {
@@ -489,7 +512,10 @@ namespace Simplayer4 {
 			}
 
 			if (SongData.nNowPlaying >= 0 && SongData.DictSong.ContainsKey(SongData.nNowPlaying)) {
-				((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
+				//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
+				try {
+					((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Clear();
+				} catch { }
 			}
 			SongData.nNowPlaying = -1;
 
@@ -504,7 +530,7 @@ namespace Simplayer4 {
 			SongData.nNowSelected = (int)((Button)sender).Tag;
 
 			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
+			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Bold;
 
 			if (SongData.nNowSelected == ReArrange.nPrevMovingIndex) { return; }
 

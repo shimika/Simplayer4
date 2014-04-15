@@ -285,7 +285,7 @@
                     </Button>
                 </Grid>
 
-                <Grid x:Name="gridNowPlaying" Grid.Row="1">
+                <Grid x:Name="gridPlayingControls" Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="110"/>
                         <ColumnDefinition Width="*"/>

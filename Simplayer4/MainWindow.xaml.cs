@@ -275,6 +275,10 @@ namespace Simplayer4 {
 			dtm.Tick += delegate(object senderX, EventArgs eX) { isDeleteProcessing = false; ((DispatcherTimer)senderX).Stop(); };
 			dtm.Start();
 
+			try {
+				((Grid)SongData.DictSong[nId].gBase.Children[4]).Children.Clear();
+			} catch { }
+
 			int delIndex = SongData.DictSong[nId].nPosition;
 			stackList.Children.RemoveAt(delIndex);
 			SongData.DictSong.Remove(nId);
@@ -420,7 +424,7 @@ namespace Simplayer4 {
 			GridNowPlay.SetResourceReference(Grid.BackgroundProperty, "sColor");
 			GridNowPlay.OpacityMask = imgNowPlayArray[0];
 
-			DispatcherTimer dtmOverlay = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(300), IsEnabled = true };
+			DispatcherTimer dtmOverlay = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(200), IsEnabled = true };
 			dtmOverlay.Tick += dtmOverlay_Tick;
 		}
 

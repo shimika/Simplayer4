@@ -55,8 +55,10 @@ namespace Simplayer4 {
 			for (int i = 0; i < nIndexerPosition.Length; i++) {
 				if (nIndexerPosition[i] < 0) {
 					((Button)winMain.gridIndexer.Children[i]).Background = Brushes.LightGray;
+					((Button)winMain.gridIndexer.Children[i]).IsEnabled = false;
 				} else {
 					((Button)winMain.gridIndexer.Children[i]).SetResourceReference(Button.BackgroundProperty, "sColor");
+					((Button)winMain.gridIndexer.Children[i]).IsEnabled = true;
 				}
 			}
 		}

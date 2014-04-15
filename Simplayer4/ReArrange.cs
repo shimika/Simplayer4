@@ -122,7 +122,10 @@ namespace Simplayer4 {
 
 			winMain.gridIndexer.Visibility = Visibility.Collapsed;
 			winMain.buttonIndexerSort.Visibility = Visibility.Visible;
-			winMain.buttonAutoSortOff.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+			if (Pref.isAutoSort) {
+				winMain.ShowMessage("자동 정렬 옵션이 해제되었습니다.", 4);
+				winMain.buttonAutoSortOff.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+			}
 		}
 
 		static bool isCornerScrollingDelay = false;

@@ -182,7 +182,6 @@ namespace Simplayer4 {
 			if (noti.Length > 60) { noti = noti.Substring(0, 60) + "..."; }
 			winMain.ni.Text = noti.Replace('&', '＆');
 
-
 			//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Visible;
 			((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Add(winMain.GridNowPlay);
 			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).TextDecorations = null;

@@ -372,7 +372,7 @@ namespace Simplayer4 {
 			}
 		}
 
-		private void ShowMessage(string message, double dTimeout) {
+		public void ShowMessage(string message, double dTimeout) {
 			Storyboard sb = new Storyboard();
 
 			if (dTimeout > 0) {

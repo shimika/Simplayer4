@@ -154,10 +154,10 @@ namespace Simplayer4 {
 					for (int k = 0; k < 16; k++) {
 						if (i >= 14 && j >= 14 && k >= 14) { continue; }
 						klist.Add(new KeyValuePair<int, int>(ck[i, j, k], i * 65536 + j * 256 + k));
-						//sl.Add(ck[i, j, k], i * 65536 + j * 256 + k);
 					}
 				}
 			}
+
 			klist.Add(new KeyValuePair<int, int>(1, 0));
 			klist.Sort(new Comparison<KeyValuePair<int, int>>(
 				(i1, i2) => i2.Key.CompareTo(i1.Key)));

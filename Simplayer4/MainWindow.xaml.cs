@@ -49,7 +49,11 @@ namespace Simplayer4 {
 
 			CustomControl.sColor = sColor = FindResource("sColor") as SolidColorBrush;
 
-			gridTitlebar.MouseLeftButtonDown += (o, e) => DragMove();
+			gridTitlebar.MouseLeftButtonDown += (o, e) => {
+				try { DragMove(); } catch (Exception ex) {
+					MessageBox.Show(ex.Message);
+				}
+			};
 			buttonMinimize.Click += buttonMinimize_Click;
 			buttonClose.Click += (o, e) => this.Close();
 			this.Activated += (o, e) => grideffectShadow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.5, TimeSpan.FromMilliseconds(100)));

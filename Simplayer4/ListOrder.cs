@@ -52,15 +52,24 @@ namespace Simplayer4 {
 				}
 			}
 
+			bool flag = false;
+			for (int i = 41; i <= 50; i++) {
+				if (nIndexerPosition[i] >= 0) { flag = true; break; }
+			}
+
 			for (int i = 0; i < nIndexerPosition.Length; i++) {
 				if (nIndexerPosition[i] < 0) {
-					((Button)winMain.gridIndexer.Children[i]).Background = Brushes.LightGray;
-					((Button)winMain.gridIndexer.Children[i]).IsEnabled = false;
+					(winMain.gridIndexer.Children[i] as Button).Background = Brushes.LightGray;
+					(winMain.gridIndexer.Children[i] as Button).IsEnabled = false;
 				} else {
-					((Button)winMain.gridIndexer.Children[i]).SetResourceReference(Button.BackgroundProperty, "sColor");
-					((Button)winMain.gridIndexer.Children[i]).IsEnabled = true;
+					(winMain.gridIndexer.Children[i] as Button).SetResourceReference(Button.BackgroundProperty, "sColor");
+					(winMain.gridIndexer.Children[i] as Button).IsEnabled = true;
 				}
+
+				(winMain.gridIndexer.Children[i] as Button).Visibility = flag || i > 50 || i < 41 ? Visibility.Visible : Visibility.Collapsed;
 			}
+
+			Grid.SetRow(winMain.gridIndexer.Children[51] as Button, flag ? 7 : 5);
 		}
 	}
 }

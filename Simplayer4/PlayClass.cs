@@ -215,7 +215,7 @@ namespace Simplayer4 {
 				winMain.cWindow.AnimateWindow();
 			}
 
-			if (isShowPreview && Pref.isNofifyOn && !Pref.isLyricsVisible && (!Pref.isShowing || winMain.WindowState == WindowState.Minimized)) {
+			if (isShowPreview && Pref.isNofifyOn && !Pref.isLyricsVisible) {
 				//winMain.pWindow.AnimateWindow(string.Format("{0}{1}{2}", , );
 				winMain.pWindow.AnimateWindow(nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " " + nowPlayingData.strArtist);
 			} else {

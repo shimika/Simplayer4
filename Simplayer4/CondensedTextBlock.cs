@@ -83,7 +83,7 @@ namespace Simplayer4 {
 				DrawingContext.DrawText(FormattedText, new Point(XOffset, 0));
 
 				Geometry textGeometry = FormattedText.BuildGeometry(new Point(XOffset, 0));
-				DrawingContext.DrawGeometry(Brushes.White, new Pen(new SolidColorBrush(Colors.Black), 0.2), textGeometry);
+				DrawingContext.DrawGeometry(Brushes.White, new Pen(new SolidColorBrush(Colors.Black), 0.1), textGeometry);
 				XOffset += FormattedText.WidthIncludingTrailingWhitespace * FontStretch / 100;
 			}
 

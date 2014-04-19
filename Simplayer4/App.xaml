@@ -11,8 +11,10 @@
         <Style TargetType="{x:Type TextBlock}">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-            <Setter Property="TextOptions.TextHintingMode" Value="Animated"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <!-- 
+            <Setter Property="TextOptions.TextHintingMode" Value="Animated"/>
+            -->
         </Style>
         <Color x:Key="cColor">SlateBlue</Color>
         <SolidColorBrush

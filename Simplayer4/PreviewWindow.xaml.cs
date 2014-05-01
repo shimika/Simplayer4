@@ -44,7 +44,7 @@ namespace Simplayer4 {
 
 		bool isOpened = false;
 		DispatcherTimer dtm = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(3000), IsEnabled = false };
-		double AnimateTime = 500;
+		double AnimateTime = 500, EasingK = 6;
 
 		public void AnimateWindow(string title, string sub, bool isAnimated = true) {
 			if (!isAnimated && gridContainer.Children.Count > 0) {
@@ -106,14 +106,14 @@ namespace Simplayer4 {
 			daStretch1 = new DoubleAnimation(250, 100, TimeSpan.FromMilliseconds(AnimateTime)) {
 				EasingFunction = new ExponentialEase() {
 					EasingMode = EasingMode.EaseOut,
-					Exponent = 6,
+					Exponent = EasingK,
 				},
 				BeginTime = TimeSpan.FromMilliseconds(250)
 			};
 			daStretch2 = new DoubleAnimation(250, 100, TimeSpan.FromMilliseconds(AnimateTime)) {
 				EasingFunction = new ExponentialEase() {
 					EasingMode = EasingMode.EaseOut,
-					Exponent = 6,
+					Exponent = EasingK,
 				},
 				BeginTime = TimeSpan.FromMilliseconds(250)
 			};
@@ -125,14 +125,14 @@ namespace Simplayer4 {
 			taMargin1 = new ThicknessAnimation(new Thickness(0), TimeSpan.FromMilliseconds(AnimateTime)) {
 				EasingFunction = new ExponentialEase() {
 					EasingMode = EasingMode.EaseOut,
-					Exponent = 6,
+					Exponent = EasingK,
 				},
 				BeginTime = TimeSpan.FromMilliseconds(250)
 			};
 			taMargin2 = new ThicknessAnimation(new Thickness(20, 0, 0, 0), TimeSpan.FromMilliseconds(AnimateTime)) {
 				EasingFunction = new ExponentialEase() {
 					EasingMode = EasingMode.EaseOut,
-					Exponent = 6,
+					Exponent = EasingK,
 				},
 				BeginTime = TimeSpan.FromMilliseconds(450)
 			};

@@ -143,14 +143,27 @@ namespace Simplayer4 {
 					TogglePlayingStatus();
 					return;
 				case Key.Left:
-					if (SongData.nNowPlaying >= 0) {
-						PlayClass.MusicPrepare(SongData.nNowPlaying, -1 * Pref.nRandomSeed, false);
+					if ((Keyboard.Modifiers & ModifierKeys.Shift)== ModifierKeys.Shift) {
+						try {
+							PlayClass.mp.Position = new TimeSpan(0, 0, (int)PlayClass.mp.Position.TotalSeconds - 3);
+						} catch { }
+					} else {
+						if (SongData.nNowPlaying >= 0) {
+							PlayClass.MusicPrepare(SongData.nNowPlaying, -1 * Pref.nRandomSeed, false);
+						}
 					}
 					return;
 				case Key.Right:
-					if (SongData.nNowPlaying >= 0) {
-						PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, false);
+					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
+						try {
+							PlayClass.mp.Position = new TimeSpan(0, 0, (int)PlayClass.mp.Position.TotalSeconds + 3);
+						} catch { }
+					} else {
+						if (SongData.nNowPlaying >= 0) {
+							PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, false);
+						}
 					}
+					
 					return;
 				case Key.OemQuestion:
 					ToggleList();

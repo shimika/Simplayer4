@@ -79,8 +79,6 @@ namespace Simplayer4 {
 				HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(10, 4, 0, 0),
 				Visibility = Visibility.Visible,
 			};
-			//gridPlayImage.SetResourceReference(Grid.BackgroundProperty, "sColor");
-			//gridPlayImage.OpacityMask = new ImageBrush(rtSource("iconPlaying0.png"));
 
 			Polygon polyNew = new Polygon() { HorizontalAlignment = HorizontalAlignment.Left, Visibility = Visibility.Collapsed, Opacity = 0.7 };
 			polyNew.SetResourceReference(Polygon.FillProperty, "sColor");

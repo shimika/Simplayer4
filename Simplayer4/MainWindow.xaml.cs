@@ -209,17 +209,10 @@ namespace Simplayer4 {
 			}
 
 			if (isSelectionChange) {
-				if (SongData.DictSong.ContainsKey(nPrevIndex)) {
-					((TextBlock)SongData.DictSong[nPrevIndex].gBase.Children[0]).Foreground = Brushes.Black;
-					((TextBlock)SongData.DictSong[nPrevIndex].gBase.Children[0]).FontWeight = FontWeights.Normal;
-				}
-
 				nIndex = Math.Max(nIndex, 0);
 				nIndex = Math.Min(nIndex, SongData.DictSong.Count - 1);
 
-				SongData.nNowSelected = PlayClass.nPositionArray[nIndex];
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Bold;
+				ChangeSelection(PlayClass.nPositionArray[nIndex]);
 
 				ScrollingList(nIndex, -1);
 				return;
@@ -544,18 +537,9 @@ namespace Simplayer4 {
 		}
 
 		private void SongListItem_Click(object sender, RoutedEventArgs e) {
-			if (SongData.nNowSelected >= 0 && SongData.DictSong.ContainsKey(SongData.nNowSelected)) {
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Normal;
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).Foreground = Brushes.Black;
-			}
-			SongData.nNowSelected = (int)((Button)sender).Tag;
+			ChangeSelection((int)((Button)sender).Tag);
 
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Bold;
-
-			if (SongData.nNowSelected == ReArrange.nPrevMovingIndex) { return; }
-
-			if (!Pref.isOneClickPlaying) { return; }
+			if (SongData.nNowSelected == ReArrange.nPrevMovingIndex || !Pref.isOneClickPlaying) { return; }
 
 			PlayClass.ShuffleList();
 			PlayClass.MusicPrepare(SongData.nNowSelected, 0, false);
@@ -568,12 +552,9 @@ namespace Simplayer4 {
 			PlayClass.MusicPrepare(SongData.nNowSelected, 0, false);
 		}
 
-
-
 		private void RefreshSongList(List<SongData> listAdd) {
 			PlayClass.ShuffleList();
 			FileIO.SaveSongList();
-			//ShowMessage(string.Format("{0} song{1} ha{2} been added", listAdd.Count, listAdd.Count <= 1 ? "" : "s", listAdd.Count <= 1 ? "s" : "ve"), 2);
 			ShowMessage(string.Format("{0}개의 음악이 추가되었습니다.", listAdd.Count), 2);
 
 			if (Pref.isAutoSort) {
@@ -635,14 +616,7 @@ namespace Simplayer4 {
 			if (!Pref.isSorted) { return; }
 			if (ListOrder.nIndexerPosition[nIndex] < 0) { return; }
 
-			if (SongData.DictSong.ContainsKey(SongData.nNowSelected)) {
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).Foreground = Brushes.Black;
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Normal;
-			}
-			SongData.nNowSelected = (int)((Grid)stackList.Children[ListOrder.nIndexerPosition[nIndex]]).Tag;
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Bold;
-
+			ChangeSelection((int)((Grid)stackList.Children[ListOrder.nIndexerPosition[nIndex]]).Tag);
 			ScrollingList(ListOrder.nIndexerPosition[nIndex], 0);
 		}
 	}

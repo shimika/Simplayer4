@@ -15,6 +15,9 @@ using System.Windows.Media.Effects;
 
 namespace Simplayer4 {
 	public partial class MainWindow : Window {
+
+		#region API area
+
 		[DllImport("user32.dll")]
 		static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
@@ -27,6 +30,8 @@ namespace Simplayer4 {
 			var hWnd = new WindowInteropHelper(window).Handle;
 			SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 		}
+
+		#endregion
 
 		private void buttonMinimize_Click(object sender, RoutedEventArgs e) {
 			if (Pref.isTray) {
@@ -422,17 +427,19 @@ namespace Simplayer4 {
 		private void imageAlbumart_MouseDown(object sender, MouseButtonEventArgs e) {
 			if (SongData.nNowSelected < 0 || !SongData.DictSong.ContainsKey(SongData.nNowPlaying)) { return; }
 
+			ChangeSelection(SongData.nNowPlaying);
+			ScrollingList(SongData.DictSong[SongData.nNowPlaying].nPosition, 0);
+		}
 
+		private void ChangeSelection(int tag) {
 			if (SongData.nNowSelected >= 0 && SongData.DictSong.ContainsKey(SongData.nNowSelected)) {
 				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Normal;
 				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).Foreground = Brushes.Black;
 			}
-			SongData.nNowSelected = SongData.nNowPlaying;
+			SongData.nNowSelected = tag;
 
 			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
 			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
-
-			ScrollingList(SongData.DictSong[SongData.nNowPlaying].nPosition, 0);
 		}
 	}
 }

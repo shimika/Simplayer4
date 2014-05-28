@@ -28,26 +28,33 @@ namespace Simplayer4 {
 	/// MainWindow.xaml에 대한 상호 작용 논리
 	/// </summary>
 	public partial class MainWindow : Window {
-		public SolidColorBrush sColor;
-		public System.Windows.Forms.NotifyIcon ni = new System.Windows.Forms.NotifyIcon();
-		public System.Windows.Forms.ToolStripMenuItem cLyrWindow = new System.Windows.Forms.ToolStripMenuItem("가사창 표시");
-		System.Windows.Forms.ToolStripMenuItem cshutdown = new System.Windows.Forms.ToolStripMenuItem("닫기");
+
+		#region Global variables
+
+		public SolidColorBrush MainBrush;
+		public System.Windows.Forms.NotifyIcon NI = new System.Windows.Forms.NotifyIcon();
+		public System.Windows.Forms.ToolStripMenuItem LyrWindow = new System.Windows.Forms.ToolStripMenuItem("가사창 표시");
+		System.Windows.Forms.ToolStripMenuItem MenuShutdown = new System.Windows.Forms.ToolStripMenuItem("닫기");
 		private int PPkey, Stopkey, Prevkey, Nextkey, Lyrkey, SynPkey, SynNkey, LaunchKey;
-		HwndSource hWndSource;
-		public PreviewWindow pWindow;
-		public ChangeNotification cWindow;
-		public LyricsWindow lyrWindow;
+		HwndSource HWndSource;
+		public PreviewWindow PrevWindow;
+		public ChangeNotification ChangeNotiWindow;
+		public LyricsWindow LyricsWindow;
 		bool OneTimeCancel = false;
-		Color mainColor = Colors.SlateBlue;
-		string version = "ver 4.0.2";
+		Color MainColor = Colors.SlateBlue;
+		string Version = "ver 4.1.0";
 		public Grid GridNowPlay = null;
-		ImageBrush[] imgNowPlayArray = new ImageBrush[3];
+		ImageBrush[] ImgNowPlayArray = new ImageBrush[3];
 		int OpacityMaskIndex = 0;
+
+		#endregion
 
 		public MainWindow() {
 			InitializeComponent();
+		}
 
-			CustomControl.sColor = sColor = FindResource("sColor") as SolidColorBrush;
+		private void Window_Loaded(object sender4, RoutedEventArgs e4) {
+			CustomControl.sColor = MainBrush = FindResource("sColor") as SolidColorBrush;
 
 			gridTitlebar.MouseLeftButtonDown += (o, e) => {
 				try { DragMove(); } catch (Exception ex) {
@@ -75,11 +82,11 @@ namespace Simplayer4 {
 			CustomControl.winMain = this;
 			ReArrange.winMain = this;
 
-			pWindow = new PreviewWindow();
-			pWindow.Show();
+			PrevWindow = new PreviewWindow();
+			PrevWindow.Show();
 
-			cWindow = new ChangeNotification();
-			cWindow.Show();
+			ChangeNotiWindow = new ChangeNotification();
+			ChangeNotiWindow.Show();
 
 			this.ContextMenuOpening += MainWindow_ContextMenuOpening;
 			this.ContextMenuClosing += (o, e) => { gridContextBlock.Visibility = Visibility.Collapsed; };
@@ -123,9 +130,202 @@ namespace Simplayer4 {
 			stackList.PreviewMouseDown += stackList_PreviewMouseDown;
 			buttonIndexerSort.Click += (o, e) => ListOrder.ListSort();
 
+			dtm_Keydown.Tick += dtm_Keydown_Tick;
+
 			InitPlayer();
-		}	
-		
+
+			var iconHandle = Simplayer4.Properties.Resources.Music2.Handle;
+			NI.Icon = System.Drawing.Icon.FromHandle(iconHandle);
+			NI.Visible = true; NI.Text = "Simplayer4";
+			NI.MouseDoubleClick +=
+				delegate(object sender, System.Windows.Forms.MouseEventArgs e) {
+					if (e.Button == System.Windows.Forms.MouseButtons.Left) {
+						ActivateWindow();
+					}
+				};
+			System.Windows.Forms.ContextMenuStrip ctxt = new System.Windows.Forms.ContextMenuStrip();
+			this.Closing += delegate(object sender, CancelEventArgs e) {
+				NI.Dispose(); Application.Current.Shutdown();
+			};
+
+			MenuShutdown.Click += delegate(object sender, EventArgs e) { Application.Current.Shutdown(); };
+			LyrWindow.Click += delegate(object sender, EventArgs e) {
+				Pref.isLyricsVisible = !Pref.isLyricsVisible;
+
+				buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+				buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+
+				LyricsWindow.ToggleLyrics(Pref.isLyricsVisible);
+				LyrWindow.Checked = Pref.isLyricsVisible;
+				FileIO.SavePreference();
+			};
+			ctxt.Items.Add(LyrWindow);
+			ctxt.Items.Add(MenuShutdown);
+			NI.ContextMenuStrip = ctxt;
+
+			rectVolume.Width = Pref.nVolume;
+			PlayClass.mp.Volume = Pref.nVolume / 50;
+
+			WindowInteropHelper wih = new WindowInteropHelper(this);
+			HWndSource = HwndSource.FromHwnd(wih.Handle);
+			HWndSource.AddHook(MainWindowProc);
+
+			PPkey = Win32.GlobalAddAtom("ButtonPP");
+			Stopkey = Win32.GlobalAddAtom("ButtonStop");
+			Prevkey = Win32.GlobalAddAtom("ButtonPrev");
+			Nextkey = Win32.GlobalAddAtom("ButtonNext");
+			Lyrkey = Win32.GlobalAddAtom("LyricsKey");
+			SynPkey = Win32.GlobalAddAtom("SyncPrevKey");
+			SynNkey = Win32.GlobalAddAtom("SyncNextKey");
+			LaunchKey = Win32.GlobalAddAtom("ListShowHide");
+			Win32.RegisterHotKey(wih.Handle, PPkey, 3, Win32.VK_DOWN);
+			Win32.RegisterHotKey(wih.Handle, Stopkey, 3, Win32.VK_UP);
+			Win32.RegisterHotKey(wih.Handle, Prevkey, 3, Win32.VK_LEFT);
+			Win32.RegisterHotKey(wih.Handle, Nextkey, 3, Win32.VK_RIGHT);
+			Win32.RegisterHotKey(wih.Handle, Lyrkey, 3, Win32.VK_KEY_D);
+			Win32.RegisterHotKey(wih.Handle, SynPkey, 3, Win32.VK_OEM_COMMA);
+			Win32.RegisterHotKey(wih.Handle, SynNkey, 3, Win32.VK_OEM_PERIOD);
+			Win32.RegisterHotKey(wih.Handle, LaunchKey, 8, Win32.VK_KEY_W);
+
+			FileIO.dtmSave.Start();
+		}
+
+		List<SongData> ListSong = null;
+		private void InitPlayer() {
+			textArtist.Text = Version;
+			FileIO.ReadPreference();
+
+			if (Pref.nTheme < 6) {
+				ChangeThemeColor(((SolidColorBrush)((Button)gridTheme.Children[Pref.nTheme]).Background).Color);
+			} else if (Pref.nTheme == 6) {
+				ChangeThemeColor(Colors.Black);
+			} else if (Pref.nTheme == 7) {
+				((Button)gridTheme.Children[7]).Background = new SolidColorBrush(Pref.cTheme);
+				ChangeThemeColor(Pref.cTheme);
+			}
+
+			buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+			buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+			LyrWindow.Checked = Pref.isLyricsVisible;
+
+			buttonLinear.Visibility = Pref.nRandomSeed == 1 ? Visibility.Visible : Visibility.Collapsed;
+			buttonRandom.Visibility = Pref.nRandomSeed == 2 ? Visibility.Visible : Visibility.Collapsed;
+
+			buttonPlayAll.Visibility = Pref.nPlayingLoopSeed == 1 ? Visibility.Visible : Visibility.Collapsed;
+			buttonRepeat.Visibility = Pref.nPlayingLoopSeed == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+			buttonHideList.Visibility = Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
+			buttonShowList.Visibility = !Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
+			if (!Pref.isListVisible) { this.Height = this.MinHeight = this.MaxHeight = 192; }
+
+			OptionColorBinder((TextBlock)buttonClickOne.Content, Pref.isOneClickPlaying);
+			OptionColorBinder((TextBlock)buttonClickDouble.Content, !Pref.isOneClickPlaying);
+
+			OptionColorBinder((TextBlock)buttonNotifyOn.Content, Pref.isNofifyOn);
+			OptionColorBinder((TextBlock)buttonNotifyOff.Content, !Pref.isNofifyOn);
+
+			OptionColorBinder((TextBlock)buttonAutoSortOn.Content, Pref.isAutoSort);
+			OptionColorBinder((TextBlock)buttonAutoSortOff.Content, !Pref.isAutoSort);
+
+			OptionColorBinder((TextBlock)buttonTray.Content, Pref.isTray);
+			OptionColorBinder((TextBlock)buttonTaskbar.Content, !Pref.isTray);
+			if (!Pref.isTray) { this.ShowInTaskbar = true; }
+
+			OptionColorBinder((TextBlock)buttonHotkeyOn.Content, Pref.isHotkeyOn);
+			OptionColorBinder((TextBlock)buttonHotkeyOff.Content, !Pref.isHotkeyOn);
+
+			OptionColorBinder((TextBlock)buttonTopmostOn.Content, Pref.isTopMost);
+			OptionColorBinder((TextBlock)buttonTopmostOff.Content, !Pref.isTopMost);
+			this.Topmost = Pref.isTopMost;
+
+			OptionColorBinder((TextBlock)buttonLyricsLeft.Content, !Pref.isLyricsRight);
+			OptionColorBinder((TextBlock)buttonLyricsRight.Content, Pref.isLyricsRight);
+
+			gridIndexer.Visibility = Pref.isSorted ? Visibility.Visible : Visibility.Collapsed;
+			buttonIndexerSort.Visibility = !Pref.isSorted ? Visibility.Visible : Visibility.Collapsed;
+
+			LyricsWindow = new LyricsWindow(Pref.isLyricsVisible);
+			LyricsWindow.Show();
+
+			ListSong = FileIO.ReadSongList();
+
+			for (int i = 0; i < ListSong.Count; i++) {
+				Grid grid = CustomControl.GetListItemButton(ListSong[i], false);
+				SongData.DictSong[ListSong[i].nID].gBase = grid;
+				stackList.Children.Add(grid);
+
+				((Button)grid.Children[3]).Click += SongListItem_Click;
+				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
+			}
+
+			ActivateWindow();
+			stackList.BeginAnimation(StackPanel.OpacityProperty,
+				new DoubleAnimation(1, TimeSpan.FromMilliseconds(300)));
+
+			PlayClass.ShuffleList();
+
+			if (Pref.isAutoSort) { ListOrder.ListSort(); }
+			if (Pref.isSorted && !Pref.isAutoSort) { ListOrder.RefreshIndexer(); }
+
+			int nThemeCount = 0;
+			foreach (Button button in gridTheme.Children) {
+				nThemeCount++;
+
+				// 6개만 프리셋을 설정
+				if (nThemeCount == 7) { break; }
+
+				button.Click += (o, e) => {
+					((Button)gridTheme.Children[7]).Background = Brushes.White;
+
+					Pref.nTheme = Convert.ToInt32((string)((Button)o).Tag);
+					SolidColorBrush sc = (SolidColorBrush)((Button)o).Background;
+					ChangeThemeColor(sc.Color);
+				};
+			}
+
+			// 앨범아트 이미지 컬러
+			((Button)gridTheme.Children[6]).Click += (o, e) => {
+				Pref.nTheme = 6;
+
+				if (Pref.isPlaying == 0) {
+					ChangeThemeColor(Colors.Black);
+				} else {
+					// 현재 앨범아트의 평균 색상을 가져와서 변경
+					Color c = TagLibrary.CalculateAverageColor((BitmapSource)imageAlbumart.Source);
+					ChangeThemeColor(c);
+				}
+			};
+
+			// 커스텀 컬러
+			((Button)gridTheme.Children[7]).Click += (o, e) => {
+				System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog() {
+					AllowFullOpen = true,
+				};
+				if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+					Pref.nTheme = 7;
+					Pref.cTheme = Color.FromRgb(colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B);
+
+					((Button)gridTheme.Children[7]).Background = new SolidColorBrush(Pref.cTheme);
+
+					ChangeThemeColor(Pref.cTheme);
+				}
+			};
+
+			// 재생 중 이미지
+			for (int i = 0; i < 3; i++) {
+				ImgNowPlayArray[i] = new ImageBrush(CustomControl.rtSource(string.Format("iconPlaying{0}.png", i)));
+			}
+
+			GridNowPlay = new Grid() {
+				Width = 24, Height = 24,
+				HorizontalAlignment = HorizontalAlignment.Left,
+			};
+			GridNowPlay.SetResourceReference(Grid.BackgroundProperty, "sColor");
+			GridNowPlay.OpacityMask = ImgNowPlayArray[0];
+
+			DispatcherTimer dtmOverlay = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(200), IsEnabled = true };
+			dtmOverlay.Tick += dtmOverlay_Tick;
+		}
 
 		private void TogglePlayingStatus() {
 			switch (Pref.isPlaying) {
@@ -143,7 +343,7 @@ namespace Simplayer4 {
 					TogglePlayingStatus();
 					return;
 				case Key.Left:
-					if ((Keyboard.Modifiers & ModifierKeys.Shift)== ModifierKeys.Shift) {
+					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
 						try {
 							PlayClass.mp.Position = new TimeSpan(0, 0, (int)PlayClass.mp.Position.TotalSeconds - 3);
 						} catch { }
@@ -163,7 +363,7 @@ namespace Simplayer4 {
 							PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, false);
 						}
 					}
-					
+
 					return;
 				case Key.OemQuestion:
 					ToggleList();
@@ -221,26 +421,50 @@ namespace Simplayer4 {
 			// Indexer shortcut
 
 			int nKeyIndex = -1, nStart = 15, nEnd = 40;
-			if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) {
+			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) {
 				nStart = 1; nEnd = 14;
-			} else if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) {
+			} else if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
 				nStart = 41; nEnd = 50;
 			}
 
 			if (e.Key.ToString()[0] == 'D' && Char.IsNumber(e.Key.ToString(), e.Key.ToString().Length - 1)) { nKeyIndex = 0; }
+
 			for (int i = nStart; i <= nEnd; i++) {
-				if (sCut[i].ToString() == e.Key.ToString()) {
+				if (IndexHeader[i].ToString() == e.Key.ToString()) {
 					nKeyIndex = i;
 				}
 			}
+
 			if (nKeyIndex >= 0) {
 				if (!Pref.isListVisible) { ToggleList(); }
-				IndexerShortCut(nKeyIndex);
+
+				// Alphabet
+				if (nStart == 15 && nEnd == 40) {
+					dtm_Keydown.Stop();
+					dtm_Keydown.Start();
+
+					int idx = TitleTree.GetPositionByHeader(IndexHeader[nKeyIndex]);
+
+					if (idx >= 0) {
+						ChangeSelection(idx);
+						ScrollingList(SongData.DictSong[idx].nPosition, 0);
+					}
+				} else {
+					IndexerShortCut(nKeyIndex);
+				}
 			}
 		}
 
-		string sCut = "1RSEFAQTDWCZXVGABCDEFGHIJKLMNOPQRSTUVWXYZAKSTNHMYRW";
-		double towardOffset = -1;
+		// Indexer shortcut keydown timeout
+
+		DispatcherTimer dtm_Keydown = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1), };
+		private void dtm_Keydown_Tick(object sender, EventArgs e) {
+			(sender as DispatcherTimer).Stop();
+			TitleTree.LastPointer = 0;
+		}
+
+		string IndexHeader = "1RSEFAQTDWCZXVGABCDEFGHIJKLMNOPQRSTUVWXYZAKSTNHMYRW";
+		double TowardOffset = -1;
 
 		private void ScrollingList(int itemIndex, int offset) {
 			double nowOffset = scrollList.VerticalOffset, newOffset = 0;
@@ -259,7 +483,7 @@ namespace Simplayer4 {
 			newOffset = Math.Min(newOffset, SongData.DictSong.Count * 40 - gridListArea.ActualHeight);
 			Storyboard sb = new Storyboard();
 
-			if (towardOffset > 0) { nowOffset = towardOffset; }
+			if (TowardOffset > 0) { nowOffset = TowardOffset; }
 			DoubleAnimation da = new DoubleAnimation(nowOffset, newOffset, TimeSpan.FromMilliseconds(500)) {
 				EasingFunction = new ExponentialEase() { Exponent = 5, EasingMode = EasingMode.EaseOut },
 				BeginTime = TimeSpan.FromMilliseconds(0),
@@ -268,17 +492,17 @@ namespace Simplayer4 {
 			Storyboard.SetTargetProperty(da, new PropertyPath(AniScrollViewer.CurrentVerticalOffsetProperty));
 
 			sb.Children.Add(da);
-			sb.Completed += delegate(object sender, EventArgs e) { towardOffset = -1; };
+			sb.Completed += delegate(object sender, EventArgs e) { TowardOffset = -1; };
 			sb.Begin(this);
 
-			towardOffset = newOffset;
+			TowardOffset = newOffset;
 		}
 
 		bool isDeleteProcessing = false;
-		public void DeleteProcess(int nId) {
-			if (nId < 0) { return; }
+		public void DeleteProcess(int nID) {
+			if (nID < 0) { return; }
 			if (isDeleteProcessing) { return; }
-			if (!SongData.DictSong.ContainsKey(nId)) { return; }
+			if (!SongData.DictSong.ContainsKey(nID)) { return; }
 
 			isDeleteProcessing = true;
 			DispatcherTimer dtm = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(100) };
@@ -286,225 +510,27 @@ namespace Simplayer4 {
 			dtm.Start();
 
 			try {
-				((Grid)SongData.DictSong[nId].gBase.Children[4]).Children.Clear();
+				((Grid)SongData.DictSong[nID].gBase.Children[4]).Children.Clear();
 			} catch { }
 
-			int delIndex = SongData.DictSong[nId].nPosition;
+			TitleTree.DeleteFromTree(nID);
+
+			int delIndex = SongData.DictSong[nID].nPosition;
 			stackList.Children.RemoveAt(delIndex);
-			SongData.DictSong.Remove(nId);
+			SongData.DictSong.Remove(nID);
 
 			PlayClass.ShuffleList();
 			FileIO.SaveSongList();
 
-			if (nId == SongData.nNowSelected && SongData.DictSong.Count > 0) {
+			if (nID == SongData.nNowSelected && SongData.DictSong.Count > 0) {
 				SongData.nNowSelected = PlayClass.nPositionArray[Math.Min(SongData.DictSong.Count - 1, delIndex)];
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
+				ChangeSelection(SongData.nNowSelected);
 			}
 
 			if (Pref.isSorted) { ListOrder.RefreshIndexer(); }
 		}
 
-		List<SongData> listSong = null;
-		private void InitPlayer() {
-			textArtist.Text = version;
-			FileIO.ReadPreference();
 
-			if (Pref.nTheme < 6) {
-				ChangeThemeColor(((SolidColorBrush)((Button)gridTheme.Children[Pref.nTheme]).Background).Color);
-			} else if (Pref.nTheme == 6) {
-				ChangeThemeColor(Colors.Black);
-			} else if (Pref.nTheme == 7) {
-				((Button)gridTheme.Children[7]).Background = new SolidColorBrush(Pref.cTheme);
-				ChangeThemeColor(Pref.cTheme);
-			}
-
-			buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
-			buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
-			cLyrWindow.Checked = Pref.isLyricsVisible;
-
-			buttonLinear.Visibility = Pref.nRandomSeed == 1 ? Visibility.Visible : Visibility.Collapsed;
-			buttonRandom.Visibility = Pref.nRandomSeed == 2 ? Visibility.Visible : Visibility.Collapsed;
-
-			buttonPlayAll.Visibility = Pref.nPlayingLoopSeed == 1 ? Visibility.Visible : Visibility.Collapsed;
-			buttonRepeat.Visibility = Pref.nPlayingLoopSeed == 0 ? Visibility.Visible : Visibility.Collapsed;
-
-			buttonHideList.Visibility = Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
-			buttonShowList.Visibility = !Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
-			if (!Pref.isListVisible) { this.Height = this.MinHeight = this.MaxHeight = 192; }
-
-			OptionColorBinder((TextBlock)buttonClickOne.Content, Pref.isOneClickPlaying);
-			OptionColorBinder((TextBlock)buttonClickDouble.Content, !Pref.isOneClickPlaying);
-
-			OptionColorBinder((TextBlock)buttonNotifyOn.Content, Pref.isNofifyOn);
-			OptionColorBinder((TextBlock)buttonNotifyOff.Content, !Pref.isNofifyOn);
-
-			OptionColorBinder((TextBlock)buttonAutoSortOn.Content, Pref.isAutoSort);
-			OptionColorBinder((TextBlock)buttonAutoSortOff.Content, !Pref.isAutoSort);
-
-			OptionColorBinder((TextBlock)buttonTray.Content, Pref.isTray);
-			OptionColorBinder((TextBlock)buttonTaskbar.Content, !Pref.isTray);
-			if (!Pref.isTray) { this.ShowInTaskbar = true; }
-
-			OptionColorBinder((TextBlock)buttonHotkeyOn.Content, Pref.isHotkeyOn);
-			OptionColorBinder((TextBlock)buttonHotkeyOff.Content, !Pref.isHotkeyOn);
-
-			OptionColorBinder((TextBlock)buttonTopmostOn.Content, Pref.isTopMost);
-			OptionColorBinder((TextBlock)buttonTopmostOff.Content, !Pref.isTopMost);
-			this.Topmost = Pref.isTopMost;
-
-			OptionColorBinder((TextBlock)buttonLyricsLeft.Content, !Pref.isLyricsRight);
-			OptionColorBinder((TextBlock)buttonLyricsRight.Content, Pref.isLyricsRight);
-
-			gridIndexer.Visibility = Pref.isSorted ? Visibility.Visible : Visibility.Collapsed;
-			buttonIndexerSort.Visibility = !Pref.isSorted ? Visibility.Visible : Visibility.Collapsed;
-
-
-			lyrWindow = new LyricsWindow(Pref.isLyricsVisible);
-			lyrWindow.Show();
-
-
-			listSong = FileIO.ReadSongList();
-
-			for (int i = 0; i < listSong.Count; i++) {
-				Grid grid = CustomControl.GetListItemButton(listSong[i], false);
-				SongData.DictSong[listSong[i].nID].gBase = grid;
-				stackList.Children.Add(grid);
-
-				((Button)grid.Children[3]).Click += SongListItem_Click;
-				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
-			}
-			PlayClass.ShuffleList();
-
-			if (Pref.isAutoSort) { ListOrder.ListSort(); }
-			if (Pref.isSorted && !Pref.isAutoSort) { ListOrder.RefreshIndexer(); }
-
-			int nThemeCount = 0;
-			foreach (Button button in gridTheme.Children) {
-				nThemeCount++;
-
-				// 6개만 프리셋을 설정
-				if (nThemeCount == 7) { break; }
-
-				button.Click += (o, e) => {
-					((Button)gridTheme.Children[7]).Background = Brushes.White;
-
-					Pref.nTheme = Convert.ToInt32((string)((Button)o).Tag);
-					SolidColorBrush sc = (SolidColorBrush)((Button)o).Background;
-					ChangeThemeColor(sc.Color);
-				};
-			}
-
-			// 앨범아트 이미지 컬러
-			((Button)gridTheme.Children[6]).Click += (o, e) => {
-				Pref.nTheme = 6;
-
-				if (Pref.isPlaying == 0) {
-					ChangeThemeColor(Colors.Black);
-				} else {
-					// 현재 앨범아트의 평균 색상을 가져와서 변경
-					Color c = TagLibrary.CalculateAverageColor((BitmapSource)imageAlbumart.Source);
-					ChangeThemeColor(c);
-				}
-			};
-
-			// 커스텀 컬러
-			((Button)gridTheme.Children[7]).Click += (o, e) => {
-				System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog() {
-					AllowFullOpen = true,
-				};
-				if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
-					Pref.nTheme = 7;
-					Pref.cTheme = Color.FromRgb(colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B);
-
-					((Button)gridTheme.Children[7]).Background = new SolidColorBrush(Pref.cTheme);
-
-					ChangeThemeColor(Pref.cTheme);
-				}
-			};
-
-			// 재생 중 이미지
-			for (int i = 0; i < 3; i++) {
-				imgNowPlayArray[i] = new ImageBrush(CustomControl.rtSource(string.Format("iconPlaying{0}.png", i)));
-			}
-
-			GridNowPlay = new Grid() {
-				Width = 24, Height = 24,
-				HorizontalAlignment = HorizontalAlignment.Left,
-			};
-			GridNowPlay.SetResourceReference(Grid.BackgroundProperty, "sColor");
-			GridNowPlay.OpacityMask = imgNowPlayArray[0];
-
-			DispatcherTimer dtmOverlay = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(200), IsEnabled = true };
-			dtmOverlay.Tick += dtmOverlay_Tick;
-		}
-
-		private void dtmOverlay_Tick(object sender, EventArgs e) {
-			if (Pref.isPlaying <= 0) { return; }
-			GridNowPlay.OpacityMask = imgNowPlayArray[(++OpacityMaskIndex) % 3];
-		}
-
-		private void OptionColorBinder(TextBlock txt, bool b) {
-			if (b) {
-				txt.SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			} else { txt.Foreground = Brushes.LightGray; }
-		}
-
-		private void Window_Loaded(object sender4, RoutedEventArgs e4) {
-			var iconHandle = Simplayer4.Properties.Resources.Music2.Handle;
-			ni.Icon = System.Drawing.Icon.FromHandle(iconHandle);
-			ni.Visible = true; ni.Text = "Simplayer4";
-			ni.MouseDoubleClick +=
-				delegate(object sender, System.Windows.Forms.MouseEventArgs e) {
-					if (e.Button == System.Windows.Forms.MouseButtons.Left) {
-						ActivateWindow();
-					}
-				};
-			System.Windows.Forms.ContextMenuStrip ctxt = new System.Windows.Forms.ContextMenuStrip();
-			this.Closing += delegate(object sender, CancelEventArgs e) {
-				ni.Dispose(); Application.Current.Shutdown();
-			};
-
-			cshutdown.Click += delegate(object sender, EventArgs e) { Application.Current.Shutdown(); };
-			cLyrWindow.Click += delegate(object sender, EventArgs e) {
-				Pref.isLyricsVisible = !Pref.isLyricsVisible;
-
-				buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
-				buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
-
-				lyrWindow.ToggleLyrics(Pref.isLyricsVisible);
-				cLyrWindow.Checked = Pref.isLyricsVisible;
-				FileIO.SavePreference();
-			};
-			ctxt.Items.Add(cLyrWindow);
-			ctxt.Items.Add(cshutdown);
-			ni.ContextMenuStrip = ctxt;
-
-			rectVolume.Width = Pref.nVolume;
-			PlayClass.mp.Volume = Pref.nVolume / 50;
-
-			WindowInteropHelper wih = new WindowInteropHelper(this);
-			hWndSource = HwndSource.FromHwnd(wih.Handle);
-			hWndSource.AddHook(MainWindowProc);
-
-			PPkey = Win32.GlobalAddAtom("ButtonPP");
-			Stopkey = Win32.GlobalAddAtom("ButtonStop");
-			Prevkey = Win32.GlobalAddAtom("ButtonPrev");
-			Nextkey = Win32.GlobalAddAtom("ButtonNext");
-			Lyrkey = Win32.GlobalAddAtom("LyricsKey");
-			SynPkey = Win32.GlobalAddAtom("SyncPrevKey");
-			SynNkey = Win32.GlobalAddAtom("SyncNextKey");
-			LaunchKey = Win32.GlobalAddAtom("ListShowHide");
-			Win32.RegisterHotKey(wih.Handle, PPkey, 3, Win32.VK_DOWN);
-			Win32.RegisterHotKey(wih.Handle, Stopkey, 3, Win32.VK_UP);
-			Win32.RegisterHotKey(wih.Handle, Prevkey, 3, Win32.VK_LEFT);
-			Win32.RegisterHotKey(wih.Handle, Nextkey, 3, Win32.VK_RIGHT);
-			Win32.RegisterHotKey(wih.Handle, Lyrkey, 3, Win32.VK_KEY_D);
-			Win32.RegisterHotKey(wih.Handle, SynPkey, 3, Win32.VK_OEM_COMMA);
-			Win32.RegisterHotKey(wih.Handle, SynNkey, 3, Win32.VK_OEM_PERIOD);
-			Win32.RegisterHotKey(wih.Handle, LaunchKey, 8, Win32.VK_KEY_W);
-
-			FileIO.dtmSave.Start();
-		}
 
 		public void StopPlayer() {
 			textPlayTime.Text = "00:00 / 00:00";
@@ -513,13 +539,13 @@ namespace Simplayer4 {
 			rectPlayTime.Width = Pref.isPlaying = 0;
 
 			textTitle.Text = "Simplayer4";
-			textArtist.Text = version; textAlbum.Text = "";
+			textArtist.Text = Version; textAlbum.Text = "";
 			imageAlbumart.Source = TagLibrary.rtSource("noImage.png");
 
-			lyrWindow.lS.Text = "";
-			lyrWindow.lO.Text = "Offset:0ms";
-			lyrWindow.lT.Text = "00:00 / 00:00";
-			lyrWindow.ChangeLabels("Simplayer4", "", "");
+			LyricsWindow.lS.Text = "";
+			LyricsWindow.lO.Text = "Offset:0ms";
+			LyricsWindow.lT.Text = "00:00 / 00:00";
+			LyricsWindow.ChangeLabels("Simplayer4", "", "");
 
 			if (Pref.nTheme == 6) {
 				ChangeThemeColor(Colors.Black, false);
@@ -559,8 +585,16 @@ namespace Simplayer4 {
 
 			if (Pref.isAutoSort) {
 				ListOrder.ListSort();
-				if (listAdd.Count > 0) {
-					ScrollingList(listAdd[0].nPosition, 0);
+				int minIndex = 999999999;
+
+				foreach (SongData sd in listAdd) {
+					if (minIndex > sd.nPosition) {
+						minIndex = sd.nPosition;
+					}
+				}
+
+				if (minIndex != 999999999) {
+					ScrollingList(minIndex, 0);
 				}
 			} else {
 				if (listAdd.Count > 0) {
@@ -575,14 +609,12 @@ namespace Simplayer4 {
 				}
 			}
 		}
-
-
-
-		string strIndexer = "1ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ_ABCDEFGHIJKLMNOPQRSTUVWXYZ______あかさたなはまやらわ#";
+		
+		string IndexerFormattedHeader = "1ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ_ABCDEFGHIJKLMNOPQRSTUVWXYZ______あかさたなはまやらわ#";
 		private void IndexerPreset() {
 			int nCounter = 0;
-			for (int i = 0; i < strIndexer.Length; i++) {
-				if (strIndexer[i] == '_') { continue; }
+			for (int i = 0; i < IndexerFormattedHeader.Length; i++) {
+				if (IndexerFormattedHeader[i] == '_') { continue; }
 				Button button = new Button() {
 					Width = 36, Height = 36, Style = FindResource("FlatButton") as Style,
 					HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
@@ -592,7 +624,7 @@ namespace Simplayer4 {
 
 				TextBlock txt = new TextBlock() {
 					Foreground = Brushes.White, Margin = new Thickness(4, 2, 0, 0), FontSize = 14,
-					Text = strIndexer[i].ToString(),
+					Text = IndexerFormattedHeader[i].ToString(),
 					TextAlignment = TextAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
 				};
 

@@ -344,6 +344,7 @@
     <Compile Include="TagLib\Xmp\XmpNodeType.cs" />
     <Compile Include="TagLib\Xmp\XmpNodeVisitor.cs" />
     <Compile Include="TagLib\Xmp\XmpTag.cs" />
+    <Compile Include="TitleTree.cs" />
     <Compile Include="Win32.cs" />
     <Compile Include="WindowResizer.cs" />
     <Page Include="ChangeNotification.xaml">

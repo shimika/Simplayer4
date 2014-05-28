@@ -138,21 +138,21 @@ namespace Simplayer4 {
 			// Setting line
 			winMain.buttonLyricsOff.Click += (o, e) => {
 				Pref.isLyricsVisible = true;
-				winMain.cLyrWindow.Checked = Pref.isLyricsVisible;
+				winMain.LyrWindow.Checked = Pref.isLyricsVisible;
 
 				winMain.buttonLyricsOn.Visibility = Visibility.Visible;
 				winMain.buttonLyricsOff.Visibility = Visibility.Collapsed;
 
-				winMain.lyrWindow.ToggleLyrics(Pref.isLyricsVisible);
+				winMain.LyricsWindow.ToggleLyrics(Pref.isLyricsVisible);
 				FileIO.SavePreference();
 			};
 			winMain.buttonLyricsOn.Click += (o, e) => {
 				Pref.isLyricsVisible = false;
-				winMain.cLyrWindow.Checked = Pref.isLyricsVisible;
+				winMain.LyrWindow.Checked = Pref.isLyricsVisible;
 
 				winMain.buttonLyricsOn.Visibility = Visibility.Collapsed;
 				winMain.buttonLyricsOff.Visibility = Visibility.Visible;
-				winMain.lyrWindow.ToggleLyrics(Pref.isLyricsVisible);
+				winMain.LyricsWindow.ToggleLyrics(Pref.isLyricsVisible);
 				FileIO.SavePreference();
 			};
 

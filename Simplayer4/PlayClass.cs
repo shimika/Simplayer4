@@ -23,14 +23,14 @@ namespace Simplayer4 {
 			TimeSpan nowPos = mp.Position; int min, sec;
 			min = (int)nowPos.TotalMinutes; sec = nowPos.Seconds;
 			string strBackup = winMain.textPlayTime.Text;
-			winMain.textPlayTime.Text = winMain.lyrWindow.lT.Text = string.Format("{0}:{1:D2} / {2}:{3:D2}", min, sec, (int)nowPlayingData.Duration.TotalMinutes, nowPlayingData.Duration.Seconds);
+			winMain.textPlayTime.Text = winMain.LyricsWindow.lT.Text = string.Format("{0}:{1:D2} / {2}:{3:D2}", min, sec, (int)nowPlayingData.Duration.TotalMinutes, nowPlayingData.Duration.Seconds);
 
 			dPlayPerTotal = mp.Position.TotalSeconds / nowPlayingData.Duration.TotalSeconds;
 			if (strBackup != winMain.textPlayTime.Text) {
 				winMain.rectPlayTime.Width = winMain.rectTotalTime.ActualWidth * dPlayPerTotal;
 			}
 
-			winMain.lyrWindow.GetPlayTime(mp.Position);
+			winMain.LyricsWindow.GetPlayTime(mp.Position);
 		}
 
 		public static void RefreshSongPosition() {
@@ -131,11 +131,11 @@ namespace Simplayer4 {
 
 		public static void PlayMusic(int nId, int nDirection, bool isShowPreview) {
 			if (SongData.nNowPlaying >= 0 && SongData.DictSong.ContainsKey(SongData.nNowPlaying)) {
-				//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Collapsed;
 				try {
 					((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Clear();
 				} catch { }
 			}
+
 			SongData.nNowPlaying = nId;
 
 			if (!SongData.DictSong.ContainsKey(SongData.nNowPlaying)) {
@@ -180,49 +180,48 @@ namespace Simplayer4 {
 
 			string noti = nowPlayingData.strTitle;
 			if (noti.Length > 60) { noti = noti.Substring(0, 60) + "..."; }
-			winMain.ni.Text = noti.Replace('&', '＆');
+			winMain.NI.Text = noti.Replace('&', '＆');
 
 			//((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Visibility = Visibility.Visible;
 			((Grid)SongData.DictSong[SongData.nNowPlaying].gBase.Children[4]).Children.Add(winMain.GridNowPlay);
 			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).TextDecorations = null;
 
 			if (SongData.DictSong[SongData.nNowPlaying].strTitle != nowPlayingData.strTitle) {
-				winMain.cWindow.textBefore.Text = SongData.DictSong[SongData.nNowPlaying].strTitle;
-				winMain.cWindow.textAfter.Text = nowPlayingData.strTitle;
+				winMain.ChangeNotiWindow.textBefore.Text = SongData.DictSong[SongData.nNowPlaying].strTitle;
+				winMain.ChangeNotiWindow.textAfter.Text = nowPlayingData.strTitle;
 
-				char cHead = FileIO.HangulDevide(nowPlayingData.strTitle.ToUpper())[0];
-				int idx = FileIO.strIndexCaption.IndexOf(cHead);
-				if (idx < 0) { idx += FileIO.strIndexCaption.Length; }
+				TitleTree.DeleteFromTree(SongData.nNowPlaying);
+				int nHeaderIndex = FileIO.GetIndexerHeaderFrom(nowPlayingData.strTitle);
 
 				SongData.DictSong[SongData.nNowPlaying].strTitle = nowPlayingData.strTitle;
-				//((TextBlock)SongData.dictSong[SongData.nNowPlaying].gBase.Children[0]).Text = nowPlayingData.strTitle;
+				SongData.DictSong[SongData.nNowPlaying].strSortTag = string.Format("{0:D4}{1}", nHeaderIndex, nowPlayingData.strTitle);
 
-				SongData.DictSong[SongData.nNowPlaying].strSortTag = string.Format("{0:D3}{1}", idx, nowPlayingData.strTitle);
+				TitleTree.AddToTree(SongData.nNowPlaying);
 
-				winMain.cWindow.textScript.Text = "";
+				winMain.ChangeNotiWindow.textScript.Text = "";
 				if (Pref.isAutoSort) {
 					ListOrder.ListSort();
-					winMain.cWindow.textScript.Text = "자동으로 정렬되었습니다.";
+					winMain.ChangeNotiWindow.textScript.Text = "자동으로 정렬되었습니다.";
 				} else {
 					if (Pref.isSorted) {
 						Pref.isSorted = false;
 						winMain.gridIndexer.Visibility = Visibility.Collapsed;
 						winMain.buttonIndexerSort.Visibility = Visibility.Visible;
-						winMain.cWindow.textScript.Text = "리스트 정렬이 해제되었습니다. 인덱서가 비활성화됩니다.";
+						winMain.ChangeNotiWindow.textScript.Text = "리스트 정렬이 해제되었습니다. 인덱서가 비활성화됩니다.";
 					}
 				}
 				FileIO.SaveSongList();
-				winMain.cWindow.AnimateWindow();
+				winMain.ChangeNotiWindow.AnimateWindow();
 			}
 
 			if (isShowPreview && Pref.isNofifyOn && !Pref.isLyricsVisible) {
 				//winMain.pWindow.AnimateWindow(string.Format("{0}{1}{2}", , );
-				winMain.pWindow.AnimateWindow(nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " " + nowPlayingData.strArtist);
+				winMain.PrevWindow.AnimateWindow(nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " " + nowPlayingData.strArtist);
 			} else {
-				winMain.pWindow.AnimateWindow(nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " " + nowPlayingData.strArtist, false);
+				winMain.PrevWindow.AnimateWindow(nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " " + nowPlayingData.strArtist, false);
 			}
 
-			winMain.lyrWindow.InitLyrics(nowPlayingData);
+			winMain.LyricsWindow.InitLyrics(nowPlayingData);
 		}
 
 		public static void PauseMusic() {

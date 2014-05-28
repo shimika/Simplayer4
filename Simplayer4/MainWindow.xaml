@@ -25,7 +25,7 @@
 
                 <Grid x:Name="gridListArea" Grid.Row="2" ClipToBounds="True">
                     <local:AniScrollViewer x:Name="scrollList" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible" Template="{DynamicResource ScrollViewerControlTemplate}">
-                        <StackPanel x:Name="stackList"/>
+                        <StackPanel x:Name="stackList" Opacity="0"/>
                     </local:AniScrollViewer>
 
                     <Grid x:Name="gridIndexerRoot" Background="#E2FEFEFE" Visibility="Collapsed" Opacity="0">
@@ -70,7 +70,6 @@
                         </Grid.Background>
                     </Grid>
                     <Grid x:Name="gridContextBlock" Background="Transparent" Visibility="Collapsed"/>
-
 
                     <Grid x:Name="gridPrefBackground" Background="#AA000000" IsHitTestVisible="False" Opacity="0"/>
 

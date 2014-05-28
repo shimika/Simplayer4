@@ -160,17 +160,18 @@ namespace Simplayer4 {
 		private void FileAdd(List<SongData> listAdd) {
 			// Extract Sort Index
 			foreach (SongData sData in listAdd) {
-				char cHead = FileIO.HangulDevide(sData.strTitle.ToUpper())[0];
-				int idx = FileIO.strIndexCaption.IndexOf(cHead);
-				if (idx < 0) { idx += FileIO.strIndexCaption.Length; }
-
-				sData.strSortTag = string.Format("{0:D3}{1}", idx, sData.strTitle);
-				sData.nHeadIndex = FileIO.strIndexUnique.IndexOf(FileIO.strIndexValue[idx]);
 				sData.nID = SongData.nCount;
 
-				listSong.Add(sData);
+				int nHeaderIndex = FileIO.GetIndexerHeaderFrom(sData.strTitle); 
+
+				sData.strSortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.strTitle);
+				sData.nHeadIndex = FileIO.IndexUnique.IndexOf(FileIO.IndexValue[nHeaderIndex]);
+
+				ListSong.Add(sData);
 				SongData.DictSong.Add(SongData.nCount, sData);
 				SongData.nCount++;
+
+				TitleTree.AddToTree(sData.nID);
 
 				Grid grid = CustomControl.GetListItemButton(sData, true);
 				SongData.DictSong[sData.nID].gBase = grid;
@@ -339,16 +340,16 @@ namespace Simplayer4 {
 					buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
 					buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
 
-					lyrWindow.ToggleLyrics(Pref.isLyricsVisible);
-					cLyrWindow.Checked = Pref.isLyricsVisible;
+					LyricsWindow.ToggleLyrics(Pref.isLyricsVisible);
+					LyrWindow.Checked = Pref.isLyricsVisible;
 					FileIO.SavePreference();
 				} else if (wParam.ToString() == SynPkey.ToString()) {
 					if (Pref.isPlaying != 0) {
-						lyrWindow.ChangeOffset(-200);
+						LyricsWindow.ChangeOffset(-200);
 					}
 				} else if (wParam.ToString() == SynNkey.ToString()) {
 					if (Pref.isPlaying != 0) {
-						lyrWindow.ChangeOffset(200);
+						LyricsWindow.ChangeOffset(200);
 					}
 				} else if (wParam.ToString() == LaunchKey.ToString()) {
 					ActivateWindow();
@@ -413,13 +414,13 @@ namespace Simplayer4 {
 		}
 
 		public void ChangeThemeColor(Color color, bool isSave = true) {
-			mainColor = color;
+			MainColor = color;
 			grideffectShadow.BeginAnimation(DropShadowEffect.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
 			gStop1.BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
 
-			Application.Current.Resources["sColor"] = new SolidColorBrush(mainColor);
-			Application.Current.Resources["cColor"] = Color.FromArgb(255, mainColor.R, mainColor.G, mainColor.B);
-			CustomControl.sColor = sColor = FindResource("sColor") as SolidColorBrush;
+			Application.Current.Resources["sColor"] = new SolidColorBrush(MainColor);
+			Application.Current.Resources["cColor"] = Color.FromArgb(255, MainColor.R, MainColor.G, MainColor.B);
+			CustomControl.sColor = MainBrush = FindResource("sColor") as SolidColorBrush;
 
 			if (isSave) { FileIO.SavePreference(); }
 		}
@@ -438,8 +439,19 @@ namespace Simplayer4 {
 			}
 			SongData.nNowSelected = tag;
 
-			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			((TextBlock)SongData.DictSong[SongData.nNowPlaying].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
+			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
+			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
+		}
+
+		private void dtmOverlay_Tick(object sender, EventArgs e) {
+			if (Pref.isPlaying <= 0) { return; }
+			GridNowPlay.OpacityMask = ImgNowPlayArray[(++OpacityMaskIndex) % 3];
+		}
+
+		private void OptionColorBinder(TextBlock txt, bool b) {
+			if (b) {
+				txt.SetResourceReference(TextBlock.ForegroundProperty, "sColor");
+			} else { txt.Foreground = Brushes.LightGray; }
 		}
 	}
 }

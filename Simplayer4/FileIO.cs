@@ -10,25 +10,30 @@ using System.Windows.Threading;
 namespace Simplayer4 {
 	public class FileIO {
 		public static string ffIcon = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ico";
-		static string ffList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ini";
-		static string ffPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4Pref.ini";
-		static string ffPrev = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\SimplayerFLAT.ini";
+		static string ffPrevList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ini";
+		static string ffPrevPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4Pref.ini";
+
+		static string ffList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4.ini";
+		static string ffPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4Pref.ini";
+
+		static string ffFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4";
 		public static DispatcherTimer dtmSave;
 
 		public static void ReadPreference() {
 			dtmSave = new DispatcherTimer() { Interval = TimeSpan.FromMinutes(1), IsEnabled = false };
 			dtmSave.Tick += dtmSave_Tick;
 
-			/*
-			if (!File.Exists(ffIcon)) {
-				string imagePath = "pack://application:,,,/Simplayer4;component/Resources/iconMP3.ico";
-				var info = Application.GetResourceStream(new Uri(imagePath));
-				var memStream = new MemoryStream();
-				info.Stream.CopyTo(memStream);
+			// Make directory
+			if (!Directory.Exists(ffFolder)) { Directory.CreateDirectory(ffFolder); }
 
-				File.WriteAllBytes(ffIcon, memStream.ToArray());
+			// Move previous data
+			if (File.Exists(ffPrevList)) { File.Move(ffPrevList, ffList); }
+			if (File.Exists(ffPrevPref)) { File.Move(ffPrevPref, ffPref); }
+
+			if (!File.Exists(ffList)) {
+				StreamWriter sw = new StreamWriter(ffList);
+				sw.Write(""); sw.Flush(); sw.Close();
 			}
-			 */ 
 
 			if (!File.Exists(ffPref)) {
 				StreamWriter sw = new StreamWriter(ffPref);
@@ -96,20 +101,12 @@ namespace Simplayer4 {
 			}
 		}
 
-		public static string strIndexCaption = "0123456789ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZぁァあアぃィいイぅゥうウぇェえエぉォおオかカがガきキぎギくクぐグけケげゲこコごゴさサざザしシじジすスずズせセぜゼそソぞゾたタだダちチぢヂっッつツづヅてテでデとトどドなナにニぬヌねネのノはハばバぱパひヒびビぴピふフぶブぷプへヘべベぺペほホぼボぽポまマみミむムめメもモゃャやヤゅュゆユょョよヨらラりリるルれレろロゎヮわワをヲんンヴ―#";
-		public static string strIndexValue = "1111111111ㄱㄱㄴㄷㄷㄹㅁㅂㅂㅅㅅㅇㅈㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZああああああああああああああああああああかかかかかかかかかかかかかかかかかかかかささささささささささささささささささささたたたたたたたたたたたたたたたたたたたたたたななななななななななははははははははははははははははははははははははははははははままままままままままややややややややややややららららららららららわわわわわわわわわわ#";
-		public static string strIndexUnique = "1ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZあかさたなはまやらわ#";
+		public static string IndexCaption = "0123456789ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZぁァあアぃィいイぅゥうウぇェえエぉォおオかカがガきキぎギくクぐグけケげゲこコごゴさサざザしシじジすスずズせセぜゼそソぞゾたタだダちチぢヂっッつツづヅてテでデとトどドなナにニぬヌねネのノはハばバぱパひヒびビぴピふフぶブぷプへヘべベぺペほホぼボぽポまマみミむムめメもモゃャやヤゅュゆユょョよヨらラりリるルれレろロゎヮわワをヲんンヴ―#";
+		public static string IndexValue = "1111111111ㄱㄱㄴㄷㄷㄹㅁㅂㅂㅅㅅㅇㅈㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZああああああああああああああああああああかかかかかかかかかかかかかかかかかかかかささささささささささささささささささささたたたたたたたたたたたたたたたたたたたたたたななななななななななははははははははははははははははははははははははははははははままままままままままややややややややややややららららららららららわわわわわわわわわわ#";
+		public static string IndexUnique = "1ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZあかさたなはまやらわ#";
 
 		public static List<SongData> ReadSongList() {
 			List<SongData> listSong = new List<SongData>();
-			if (!File.Exists(ffList)) {
-				if (File.Exists(ffPrev)) {
-					File.Copy(ffPrev, ffList);
-				} else {
-					StreamWriter sw = new StreamWriter(ffList);
-					sw.Write(""); sw.Flush(); sw.Close();
-				}
-			}
 
 			StreamReader sr = new StreamReader(ffList);
 			string strList = sr.ReadToEnd(); sr.Close();
@@ -124,22 +121,30 @@ namespace Simplayer4 {
 					nID = SongData.nCount,
 				};
 
-				char cHead = HangulDevide(sData.strTitle.ToUpper())[0];
-				int idx = strIndexCaption.IndexOf(cHead);
-				if (idx < 0) { idx += strIndexCaption.Length; }
+				int nHeaderIndex = GetIndexerHeaderFrom(sData.strTitle);
 
-				sData.strSortTag = idx.ToString("000") + sData.strTitle;
-				sData.nHeadIndex = strIndexUnique.IndexOf(strIndexValue[idx]);
+				sData.strSortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.strTitle);
+				sData.nHeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
 
 				listSong.Add(sData);
 				SongData.DictSong.Add(SongData.nCount, sData);
 				SongData.nCount++;
+
+				TitleTree.AddToTree(sData.nID);
 			}
 
 			if (Pref.isAutoSort) {
 				listSong.Sort(new SortByValue());
 			}
 			return listSong;
+		}
+
+		public static int GetIndexerHeaderFrom(string songTitle) {
+			char cHead = HangulDevide(songTitle.ToUpper())[0];
+			int idx = IndexCaption.IndexOf(cHead);
+			if (idx < 0) { idx += IndexCaption.Length; }
+
+			return idx;
 		}
 
 		public static void SaveSongList() {

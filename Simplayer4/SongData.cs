@@ -9,19 +9,19 @@ using System.Windows.Media.Imaging;
 
 namespace Simplayer4 {
 	public class SongData : INotifyPropertyChanged {
-		public int nID, nPosition, nHeadIndex;
-		public string strArtist, strAlbum, strFilePath, strSortTag, strDuration;
-		public BitmapImage imgArt;
-		public Grid gBase;
+		public int ID, Position, SortPosition, HeadIndex;
+		public string Artist, Album, FilePath, SortTag, DurationString;
+		public BitmapImage AlbumArt;
+		public Grid GridBase;
 		public TimeSpan Duration;
 		public bool isExists = true;
 
 		private string _strTitle;
-		public string strTitle {
+		public string Title {
 			get { return _strTitle; }
 			set {
 				_strTitle = value;
-				OnPropertyChanged("strTitle");
+				OnPropertyChanged("Title");
 			}
 		}
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -31,16 +31,16 @@ namespace Simplayer4 {
 			}
 		}
 
-		public static int nCount = 0, nNowSelected = -1, nNowPlaying = -1;
+		public static int IDCount = 0, NowSelected = -1, NowPlaying = -1;
 		public static Dictionary<int, SongData> DictSong = new Dictionary<int, SongData>();
 	}
 	public class Pref {
 		public static bool isLyricsVisible, isListVisible, isOneClickPlaying, isAutoSort, isNofifyOn, isSorted, isTray, isHotkeyOn, isTopMost, isLyricsRight;
-		public static int nRandomSeed, nPlayingLoopSeed, nTheme;
+		public static int RandomSeed, PlayingLoopSeed, ThemeCode;
 
 		public static bool isShowing = true, isPrefVisible = false;
 		public static int isPlaying = 0;
-		public static double nVolume, nListHeight;
-		public static Color cTheme;
+		public static double Volume, ListHeight;
+		public static Color ThemeColor;
 	}
 }

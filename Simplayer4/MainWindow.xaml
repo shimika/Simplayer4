@@ -331,7 +331,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="80"/>
                             </Grid.ColumnDefinitions>
-                            <Grid x:Name="gridPlayTime" Background="Transparent">
+                            <Grid x:Name="gridPlayStatus" Background="Transparent">
                                 <Rectangle x:Name="rectTotalTime" HorizontalAlignment="Stretch" VerticalAlignment="Center" Fill="LightGray" Height="3"/>
                                 <Rectangle x:Name="rectPlayTime" Width="50" HorizontalAlignment="Left" VerticalAlignment="Center" Fill="{DynamicResource sColor}" Height="3"/>
                             </Grid>

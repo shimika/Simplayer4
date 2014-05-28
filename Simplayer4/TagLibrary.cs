@@ -21,66 +21,68 @@ namespace Simplayer4 {
 	public class TagLibrary {
 		static TagLib.File id3;
 
-		public static bool InsertTagInDatabase(SongData sData) {
-			string ext = System.IO.Path.GetExtension(sData.strFilePath);
+		public static bool InsertTagInDatabase(ref SongData sData, bool skipImage = true) {
+			string ext = System.IO.Path.GetExtension(sData.FilePath);
 			if (ext != ".mp3" && ext != ".wma" && ext != ".flac" && ext != ".aac") { return false; }
-			if (!File.Exists(sData.strFilePath)) { return false; }
+			if (!File.Exists(sData.FilePath)) { return false; }
 
 			try {
-				id3 = TagLib.File.Create(sData.strFilePath);
+				id3 = TagLib.File.Create(sData.FilePath);
 				try {
 					try {
-						sData.strArtist = id3.Tag.Performers[0];
-					} catch { sData.strArtist = ""; }
+						sData.Artist = id3.Tag.Performers[0];
+					} catch { sData.Artist = ""; }
 
 					try {
 						if (id3.Tag.Title.Trim() != null && id3.Tag.Title.Trim() != "") {
-							sData.strTitle = id3.Tag.Title;
+							sData.Title = id3.Tag.Title;
 						} else {
-							sData.strTitle = System.IO.Path.GetFileName(sData.strFilePath);
+							sData.Title = System.IO.Path.GetFileName(sData.FilePath);
 						}
 					} catch {
-						sData.strTitle = System.IO.Path.GetFileName(sData.strFilePath);
+						sData.Title = System.IO.Path.GetFileName(sData.FilePath);
 					}
 
 					try {
-						sData.strAlbum = id3.Tag.Album;
-					} catch { sData.strAlbum = ""; }
+						sData.Album = id3.Tag.Album;
+					} catch { sData.Album = ""; }
 
 					try {
 						//sData.Duration = id3.Properties.Duration.Minutes + ":" + id3.Properties.Duration.streconds.ToString("00");
 						sData.Duration = id3.Properties.Duration;
 					} catch { sData.Duration = TimeSpan.FromMilliseconds(0); }
 				} catch {
-					sData.strTitle = System.IO.Path.GetFileName(sData.strFilePath);
-					sData.strArtist = sData.strAlbum = "";
+					sData.Title = System.IO.Path.GetFileName(sData.FilePath);
+					sData.Artist = sData.Album = "";
 					sData.Duration = TimeSpan.FromMilliseconds(0);
 				}
 
-				sData.imgArt = null;
-				try {
-					Bitmap bmp = ByteToImage(id3.Tag.Pictures[0].Data.Data, 100);
+				sData.AlbumArt = null;
+				if (!skipImage) {
+					try {
+						Bitmap bmp = ByteToImage(id3.Tag.Pictures[0].Data.Data, 100);
 
-					using (MemoryStream memory = new MemoryStream()) {
-						bmp.Save(memory, ImageFormat.Bmp);
-						memory.Position = 0;
-						BitmapImage bitmapImage = new BitmapImage();
-						bitmapImage.BeginInit();
-						bitmapImage.StreamSource = memory;
-						bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-						bitmapImage.EndInit();
-						sData.imgArt = bitmapImage;
+						using (MemoryStream memory = new MemoryStream()) {
+							bmp.Save(memory, ImageFormat.Bmp);
+							memory.Position = 0;
+							BitmapImage bitmapImage = new BitmapImage();
+							bitmapImage.BeginInit();
+							bitmapImage.StreamSource = memory;
+							bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+							bitmapImage.EndInit();
+							sData.AlbumArt = bitmapImage;
+						}
+						bmp.Dispose();
+					} catch {
+						sData.AlbumArt = rtSource("noImage.png");
 					}
-					bmp.Dispose();
-				} catch {
-					sData.imgArt = rtSource("noImage.png");
+					id3.Dispose();
 				}
-				id3.Dispose();
 			} catch (Exception ex) {
 				//System.Windows.MessageBox.Show(ex.Message);
 				return false;
 			}
-			sData.strDuration = string.Format("{0}:{1:D2}", (int)sData.Duration.TotalMinutes, sData.Duration.Seconds);
+			sData.DurationString = string.Format("{0}:{1:D2}", (int)sData.Duration.TotalMinutes, sData.Duration.Seconds);
 			return true;
 		}
 

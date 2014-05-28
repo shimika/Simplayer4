@@ -97,13 +97,16 @@
     <Compile Include="EventHandler.cs" />
     <Compile Include="FileAssociate.cs" />
     <Compile Include="FileIO.cs" />
+    <Compile Include="Functions.cs" />
+    <Compile Include="Indexer.cs" />
     <Compile Include="ListOrder.cs" />
     <Compile Include="Lyrics.cs" />
     <Compile Include="LyricsWindow.xaml.cs">
       <DependentUpon>LyricsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NotifyIcon.cs" />
     <Compile Include="PlayClass.cs" />
-    <Compile Include="PrefWindow.cs" />
+    <Compile Include="Preference.cs" />
     <Compile Include="PreviewWindow.xaml.cs">
       <DependentUpon>PreviewWindow.xaml</DependentUpon>
     </Compile>
@@ -345,7 +348,8 @@
     <Compile Include="TagLib\Xmp\XmpNodeVisitor.cs" />
     <Compile Include="TagLib\Xmp\XmpTag.cs" />
     <Compile Include="TitleTree.cs" />
-    <Compile Include="Win32.cs" />
+    <Compile Include="WinAPI.cs" />
+    <Compile Include="WinAPIFunction.cs" />
     <Compile Include="WindowResizer.cs" />
     <Page Include="ChangeNotification.xaml">
       <SubType>Designer</SubType>
@@ -395,7 +399,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="Simplayer4_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

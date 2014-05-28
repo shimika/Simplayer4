@@ -7,69 +7,129 @@ using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace Simplayer4 {
-	public class ListOrder {
-		public static MainWindow winMain;
+	public partial class MainWindow : Window {
+		private List<KeyValuePair<string, int>> listSortTag = new List<KeyValuePair<string, int>>();
+		private int CompareByKey(KeyValuePair<string, int> a, KeyValuePair<string, int> b) { return a.Key.CompareTo(b.Key); }
 
-		static List<KeyValuePair<string, int>> listSortTag = new List<KeyValuePair<string, int>>();
-		static int Compare1(KeyValuePair<string, int> a, KeyValuePair<string, int> b) { return a.Key.CompareTo(b.Key); }
+		public void SortList() {
+			ListSong = SongData.DictSong.Values.ToList().OrderBy(x => x.SortTag).ThenBy(x => x.ID).ToList();
 
-		public static void ListSort() {
-			winMain.buttonIndexerSort.Visibility = Visibility.Collapsed;
-			winMain.gridIndexer.Visibility = Visibility.Visible;
+			buttonIndexerSort.Visibility = Visibility.Collapsed;
+			gridIndexer.Visibility = Visibility.Visible;
 
 			Pref.isSorted = true;
-			PlayClass.RefreshSongPosition();
 
-			listSortTag.Clear();
-			foreach (KeyValuePair<int, SongData> kData in SongData.DictSong) {
-				listSortTag.Add(new KeyValuePair<string, int>(kData.Value.strSortTag, kData.Key));
+			for (int i = 0; i < ListSong.Count; i++) {
+				stackList.Children.Remove(SongData.DictSong[ListSong[i].ID].GridBase);
+				stackList.Children.Add(SongData.DictSong[ListSong[i].ID].GridBase);
+
+				SongData.DictSong[ListSong[i].ID].Position = i;
 			}
-			listSortTag.Sort(Compare1);
-			//winMain.textTemp.Text = listSortTag[listSortTag.Count - 1].Key;
-
-			for (int i = 0; i < listSortTag.Count; i++) {
-				winMain.stackList.Children.Remove(SongData.DictSong[listSortTag[i].Value].gBase);
-				winMain.stackList.Children.Add(SongData.DictSong[listSortTag[i].Value].gBase);
-			}
-
-			RefreshIndexer();
-			FileIO.SavePreference();
 		}
 
-		public static int[] nIndexerPosition = new int[52];
-		public static void RefreshIndexer() {
-			if (!Pref.isSorted) { return; }
-			for (int i = 0; i < nIndexerPosition.Length; i++) { nIndexerPosition[i] = -1; }
+		private void AddToLibrary(List<SongData> listAdd, bool isNew = true) {
+			// Get List<SongData> (contains: Title, DurationString, FilePath)
+			// Construct new SongData (contains: ID, SortTag, HeadIndex, ...)
 
-			PlayClass.RefreshSongPosition();
+			foreach (SongData sData in listAdd) {
+				sData.ID = SongData.IDCount;
 
-			foreach (KeyValuePair<int, SongData> kData in SongData.DictSong) {
-				SongData sData = kData.Value;
-				if (nIndexerPosition[sData.nHeadIndex] == -1) {
-					nIndexerPosition[sData.nHeadIndex] = sData.nPosition;
-				} else {
-					nIndexerPosition[sData.nHeadIndex] = Math.Min(nIndexerPosition[sData.nHeadIndex], sData.nPosition);
+				int nHeaderIndex = GetIndexerHeaderFrom(sData.Title);
+				sData.SortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.Title);
+				sData.HeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
+				sData.Position = SongData.DictSong.Count;
+
+				SongData.DictSong.Add(SongData.IDCount, sData);
+				SongData.IDCount++;
+
+				Grid grid = GetListItemButton(sData, isNew);
+				SongData.DictSong[sData.ID].GridBase = grid;
+				stackList.Children.Add(grid);
+
+				((Button)grid.Children[3]).Click += SongListItem_Click;
+				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
+
+			}
+
+			if (isNew) {
+				ShowMessage(string.Format("{0}개의 음악이 추가되었습니다.", listAdd.Count), 2);
+			}
+
+			// Push value to tree
+			RefreshSortedPosition();
+			foreach (SongData sData in listAdd) {
+				TitleTree.AddToTree(sData.ID);
+			}
+
+			if (Pref.isAutoSort) {
+				SortList();
+
+				int firstIndex = (from item in listAdd select SongData.DictSong[item.ID].Position).Min();
+				ScrollingList(firstIndex, 0);
+
+			} else if (listAdd.Count > 0) {
+				ListSong = SongData.DictSong.Values.ToList().OrderBy(x => x.Position).ThenBy(x => x.ID).ToList();
+				RefreshAbsolutePositionByList();
+
+				if (isNew || !Pref.isSorted) {
+					gridIndexer.Visibility = Visibility.Collapsed;
+					buttonIndexerSort.Visibility = Visibility.Visible;
+
+					Pref.isSorted = false;
+				}
+
+				if (isNew) {
+					ScrollingList(stackList.Children.Count - 1, -1);
 				}
 			}
 
-			bool flag = false;
-			for (int i = 41; i <= 50; i++) {
-				if (nIndexerPosition[i] >= 0) { flag = true; break; }
+			ShuffleList();
+			SaveSongList();
+			SavePreference();
+		}
+
+		private void RefreshAbsolutePositionByList() {
+			for (int i = 0; i < ListSong.Count; i++) {
+				ListSong[i].Position = i;
+				SongData.DictSong[ListSong[i].ID].Position = i;
+			}
+		}
+		private void RefreshAbsolutePositionByStackPanel() {
+			int nIndex = 0;
+			for (int i = 0; i < stackList.Children.Count; i++) {
+				Grid grid = stackList.Children[i] as Grid;
+				nIndex = (int)grid.Tag;
+				SongData.DictSong[nIndex].Position = i;
+			}
+			ListSong = SongData.DictSong.Values.ToList().OrderBy(x => x.Position).ThenBy(x => x.ID).ToList();
+		}
+		private void RefreshSortedPosition() {
+			List<SongData> listSorted = SongData.DictSong.Values.ToList().OrderBy(x => x.SortTag).ThenBy(x => x.ID).ToList();
+			for (int i = 0; i < listSorted.Count; i++) {
+				SongData.DictSong[listSorted[i].ID].SortPosition = i;
+			}
+			RefreshIndexer();
+		}
+
+		public static int[] PositionArray, ShuffleArray;
+		public static void ShuffleList() {
+			PositionArray = new int[SongData.DictSong.Count];
+			ShuffleArray = new int[SongData.DictSong.Count];
+
+			foreach (KeyValuePair<int, SongData> sData in SongData.DictSong) {
+				PositionArray[sData.Value.Position] = sData.Key;
+			}
+			for (int i = 0; i < SongData.DictSong.Count; i++) {
+				ShuffleArray[i] = i;
 			}
 
-			for (int i = 0; i < nIndexerPosition.Length; i++) {
-				if (nIndexerPosition[i] < 0) {
-					(winMain.gridIndexer.Children[i] as Button).Background = Brushes.LightGray;
-					(winMain.gridIndexer.Children[i] as Button).IsEnabled = false;
-				} else {
-					(winMain.gridIndexer.Children[i] as Button).SetResourceReference(Button.BackgroundProperty, "sColor");
-					(winMain.gridIndexer.Children[i] as Button).IsEnabled = true;
+			Random random = new Random();
+			for (int k = 0; k < 3; k++) {
+				for (int i = SongData.DictSong.Count - 1; i >= 0; i--) {
+					int j = random.Next(i);
+					int t = ShuffleArray[i]; ShuffleArray[i] = ShuffleArray[j]; ShuffleArray[j] = t;
 				}
-
-				(winMain.gridIndexer.Children[i] as Button).Visibility = flag || i > 50 || i < 41 ? Visibility.Visible : Visibility.Collapsed;
 			}
-
-			Grid.SetRow(winMain.gridIndexer.Children[51] as Button, flag ? 7 : 5);
 		}
 	}
 }

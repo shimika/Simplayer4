@@ -21,7 +21,7 @@ namespace Simplayer4 {
 				LastPushPosition = 1;
 			}
 
-			string title = ReformTitle(SongData.DictSong[nID].strTitle);
+			string title = ReformTitle(SongData.DictSong[nID].Title);
 			if (title.Length == 0) { return; }
 
 			foreach (char c in title) {
@@ -70,10 +70,7 @@ namespace Simplayer4 {
 				if (tn.MinValueID < 0) {
 					tn.MinValueID = mIndex;
 				} else {
-					//MessageBox.Show(SongData.DictSong[tn.MinValueID].strTitle + " : " + SongData.DictSong[tn.MinValueID].nPosition + "\n" +
-						//SongData.DictSong[mIndex].strTitle + " : " + SongData.DictSong[mIndex].nPosition);
-
-					if (SongData.DictSong[tn.MinValueID].nPosition > SongData.DictSong[mIndex].nPosition) {
+					if (SongData.DictSong[tn.MinValueID].SortPosition > SongData.DictSong[mIndex].SortPosition) {
 						tn.MinValueID = mIndex;
 					} else {
 						mIndex = tn.MinValueID;
@@ -89,7 +86,7 @@ namespace Simplayer4 {
 		}
 
 		public static void DeleteFromTree(int nID) {
-			string title = ReformTitle(SongData.DictSong[nID].strTitle);
+			string title = ReformTitle(SongData.DictSong[nID].Title);
 			if (title.Length == 0) { return; }
 
 			int it = 0;
@@ -140,15 +137,15 @@ namespace Simplayer4 {
 
 			if (ListTree[nodeX].ListID != null) {
 				foreach (int id in ListTree[nodeX].ListID) {
-					if (mValue > SongData.DictSong[id].nPosition) {
-						mValue = SongData.DictSong[id].nPosition;
+					if (mValue > SongData.DictSong[id].SortPosition) {
+						mValue = SongData.DictSong[id].SortPosition;
 						mIndex = id;
 					}
 				}
 			}
 			foreach (KeyValuePair<char, int> node in ListTree[nodeX].DictNext) {
-				if (mValue > SongData.DictSong[ListTree[node.Value].MinValueID].nPosition) {
-					mValue = SongData.DictSong[ListTree[node.Value].MinValueID].nPosition;
+				if (mValue > SongData.DictSong[ListTree[node.Value].MinValueID].SortPosition) {
+					mValue = SongData.DictSong[ListTree[node.Value].MinValueID].SortPosition;
 					mIndex = ListTree[node.Value].MinValueID;
 				}
 			}

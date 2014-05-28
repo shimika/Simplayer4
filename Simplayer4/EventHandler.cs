@@ -12,27 +12,93 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
 
 namespace Simplayer4 {
 	public partial class MainWindow : Window {
+		private void SetEventHandlers() {
+			// Global window
+			Activated += MainWindow_Activated;
+			Deactivated += MainWindow_Deactivated;
+			SizeChanged += MainWindow_SizeChanged;
+			Closing += MainWindow_Closing;
 
-		#region API area
+			// Titlebar movement, buttons
+			gridTitlebar.MouseLeftButtonDown += gridTitlebar_MouseLeftButtonDown;
+			buttonMinimize.Click += buttonMinimize_Click;
+			buttonClose.Click += buttonClose_Click;
 
-		[DllImport("user32.dll")]
-		static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+			// Preference
+			buttonPref.Click += buttonPref_Click;
+			gridPrefBackground.MouseDown += gridPrefBackground_MouseDown;
 
-		const UInt32 SWP_NOSIZE = 0x0001;
-		const UInt32 SWP_NOMOVE = 0x0002;
+			// Context menu
+			ContextMenuOpening += MainWindow_ContextMenuOpening;
+			ContextMenuClosing += MainWindow_ContextMenuClosing;
+			gridContextBlock.MouseDown += gridContextBlock_MouseDown;
 
-		static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+			// Rearrange item
+			PreviewMouseMove += MainWindow_PreviewMouseMove;
+			PreviewMouseUp += MainWindow_PreviewMouseUp;
 
-		static void SendWpfWindowBack(Window window) {
-			var hWnd = new WindowInteropHelper(window).Handle;
-			SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+			// PlayTime
+			gridPlayStatus.PreviewMouseDown += gridPlayStatus_PreviewMouseDown;
+			gridPlayStatus.PreviewMouseUp += gridPlayStatus_PreviewMouseUp;
+			gridPlayStatus.PreviewMouseMove += gridPlayStatus_PreviewMouseMove;
+
+			// Volume Control
+			gridVolume.PreviewMouseDown += gridVolume_PreviewMouseDown;
+			gridVolume.PreviewMouseUp += gridVolume_PreviewMouseUp;
+			gridVolume.PreviewMouseMove += gridVolume_PreviewMouseMove;
+
+			// Controlbox event
+			buttonPrev.Click += buttonPrev_Click;
+			buttonNext.Click += buttonNext_Click;
+			buttonPlay.Click += buttonPlayPause_Click;
+			buttonPause.Click += buttonPlayPause_Click;
+
+			// Indexer
+			gridIndexerRoot.MouseDown += gridIndexerRoot_MouseDown;
+			buttonIndexer.Click += buttonIndexer_Click;
+			stackList.PreviewMouseDown += stackList_PreviewMouseDown;
+			buttonIndexerSort.Click += buttonIndexerSort_Click;
+
+			// List show + hide
+			buttonHideList.Click += ListToggle_Click;
+			buttonShowList.Click += ListToggle_Click;
+
+			// File drag + drop event
+			PreviewDragLeave += MainWindow_PreviewDragLeave;
+			PreviewDragOver += MainWindow_PreviewDragOver;
+			PreviewDragEnter += MainWindow_PreviewDragEnter;
+			PreviewDrop += MainWindow_PreviewDrop;
+
+			// Key Timeout, Playing icon
+			Timer_Keydown.Tick += KeydownTimer_Tick;
+			PlayingIconTimer.Tick += PlayingIconTimer_Tick;
 		}
 
-		#endregion
+		// Global window event
+		private void MainWindow_Activated(object sender, EventArgs e) {
+			grideffectShadow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.5, TimeSpan.FromMilliseconds(100)));
+		}
+		private void MainWindow_Deactivated(object sender, EventArgs e) {
+			grideffectShadow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.1, TimeSpan.FromMilliseconds(100)));
+		}
+		private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e) {
+			rectPlayTime.Width = rectTotalTime.ActualWidth * dPlayPerTotal;
+		}
+		private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+			TrayNotify.Dispose();
+			System.Windows.Application.Current.Shutdown();
+		}
 
+		// Titlebar movement and event
+		private void gridTitlebar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+			try { DragMove(); } catch (Exception ex) {
+				//MessageBox.Show(ex.Message);
+			}
+		}
 		private void buttonMinimize_Click(object sender, RoutedEventArgs e) {
 			if (Pref.isTray) {
 				Pref.isShowing = false;
@@ -55,16 +121,11 @@ namespace Simplayer4 {
 				this.WindowState = WindowState.Minimized;
 			}
 		}
-
-		private void MainWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e) {
-			if (OneTimeCancel || ReArrange.isMouseDown) {
-				OneTimeCancel = false;
-				e.Handled = true;
-			} else {
-				gridContextBlock.Visibility = Visibility.Visible;
-			}
+		private void buttonClose_Click(object sender, RoutedEventArgs e) {
+			this.Close();
 		}
 
+		// Preference events
 		private void buttonPref_Click(object sender, RoutedEventArgs e) {
 			Pref.isPrefVisible = !Pref.isPrefVisible;
 			imagePref.Visibility = Pref.isPrefVisible ? Visibility.Collapsed : Visibility.Visible;
@@ -91,108 +152,128 @@ namespace Simplayer4 {
 			sb.BeginTime = TimeSpan.FromMilliseconds(dDelay);
 			sb.Begin(this);
 		}
+		private void gridPrefBackground_MouseDown(object sender, MouseButtonEventArgs e) {
+			buttonPref.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+		}
 
+		// Context menu event
+		private void MainWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e) {
+			if (ContextBlock || isMouseDown) {
+				ContextBlock = false;
+				e.Handled = true;
+			} else {
+				gridContextBlock.Visibility = Visibility.Visible;
+			}
+		}
+		private void MainWindow_ContextMenuClosing(object sender, ContextMenuEventArgs e) {
+			gridContextBlock.Visibility = Visibility.Collapsed;
+		}
+		private void gridContextBlock_MouseDown(object sender, MouseButtonEventArgs e) {
+			gridContextBlock.Visibility = Visibility.Collapsed;
+		}
+
+		// Rearrange item event
+		private void MainWindow_PreviewMouseMove(object sender, MouseEventArgs e) {
+			MouseMove(e.GetPosition(gridListArea));
+		}
+		private void MainWindow_PreviewMouseUp(object sender, MouseButtonEventArgs e) {
+			MouseReleaseUp();
+		}
+
+		// Now playing status bar
+		bool isPlayTimeMouseDown = false;
+		private void gridPlayStatus_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
+			e.Handled = true;
+			if (Pref.isPlaying == 0) { return; }
+			double mouseMovingPixel = e.GetPosition(gridPlayStatus).X;
+			mouseMovingPixel = Math.Min(gridPlayStatus.ActualWidth, mouseMovingPixel);
+			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
+
+			try {
+				mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * mp.NaturalDuration.TimeSpan.TotalSeconds));
+				rectPlayTime.Width = mouseMovingPixel;
+			} catch { }
+
+			isPlayTimeMouseDown = true;
+			gridPlayStatus.CaptureMouse();
+		}
+		private void gridPlayStatus_PreviewMouseUp(object sender, MouseButtonEventArgs e) {
+			isPlayTimeMouseDown = false;
+			gridPlayStatus.ReleaseMouseCapture();
+		}
+		private void gridPlayStatus_PreviewMouseMove(object sender, MouseEventArgs e) {
+			if (Pref.isPlaying == 0) { return; }
+			if (!isPlayTimeMouseDown) { return; }
+			double mouseMovingPixel = e.GetPosition(gridPlayStatus).X;
+			mouseMovingPixel = Math.Min(gridPlayStatus.ActualWidth, mouseMovingPixel);
+			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
+
+			try {
+				mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * mp.NaturalDuration.TimeSpan.TotalSeconds));
+				rectPlayTime.Width = mouseMovingPixel;
+			} catch { }
+		}
+
+		// Volume control
+		bool isVolumeMouseDown = false;
+		private void gridVolume_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
+			e.Handled = true;
+			double mouseMovingPixel = e.GetPosition(gridVolume).X;
+			mouseMovingPixel = Math.Min(50, mouseMovingPixel);
+			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
+
+			mp.Volume = mouseMovingPixel / 50;
+			rectVolume.Width = mouseMovingPixel;
+
+			isVolumeMouseDown = true;
+			gridVolume.CaptureMouse();
+		}
+		private void gridVolume_PreviewMouseUp(object sender, MouseButtonEventArgs e) {
+			isVolumeMouseDown = false;
+			gridVolume.ReleaseMouseCapture();
+		}
+		private void gridVolume_PreviewMouseMove(object sender, MouseEventArgs e) {
+			if (!isVolumeMouseDown) { return; }
+			double mouseMovingPixel = e.GetPosition(gridVolume).X;
+			mouseMovingPixel = Math.Min(50, mouseMovingPixel);
+			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
+
+			//textIndex.Text = mp.Volume.ToString();
+
+			mp.Volume = mouseMovingPixel / 50;
+			rectVolume.Width = mouseMovingPixel;
+		}
+
+		// Playing control box
 		private void buttonPrev_Click(object sender, RoutedEventArgs e) {
-			if (SongData.nNowPlaying >= 0) {
-				PlayClass.MusicPrepare(SongData.nNowPlaying, -1 * Pref.nRandomSeed, false);
+			if (SongData.NowPlaying >= 0) {
+				MusicPrepare(SongData.NowPlaying, -1 * Pref.RandomSeed, false);
 			}
 		}
-
 		private void buttonNext_Click(object sender, RoutedEventArgs e) {
-			if (SongData.nNowPlaying >= 0) {
-				PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, false);
+			if (SongData.NowPlaying >= 0) {
+				MusicPrepare(SongData.NowPlaying, Pref.RandomSeed, false);
+			}
+		}
+		private void buttonPlayPause_Click(object sender, RoutedEventArgs e) {
+			TogglePlayingStatus();
+		}
+		private void TogglePlayingStatus() {
+			switch (Pref.isPlaying) {
+				case -1: ResumeMusic(); break;
+				case 0: MusicPrepare(-1, 1, true); break;
+				case 1: PauseMusic(); break;
 			}
 		}
 
-		#region Music list drag & drop
-
-		private void MainWindow_PreviewDragEnter(object sender, DragEventArgs e) {
-			var dropPossible = e.Data != null && ((DataObject)e.Data).ContainsFileDropList();
-			if (dropPossible) { gridDrop.Visibility = Visibility.Visible; }
-		}
-
-		private void MainWindow_PreviewDrop(object sender, DragEventArgs e) {
-			gridDrop.Visibility = Visibility.Collapsed;
-			if (!(e.Data is DataObject) || !((DataObject)e.Data).ContainsFileDropList()) { return; }
-
-			Queue<string> Q = new Queue<string>();
-			string strPath;
-			bool isOK;
-			List<SongData> listAdd = new List<SongData>();
-
-			// BFS
-			foreach (string filePath in ((DataObject)e.Data).GetFileDropList()) {
-				if (Directory.Exists(filePath)) {
-					Q.Enqueue(filePath);
-
-					for (; ; ) {
-						if (Q.Count == 0) { break; }
-						strPath = Q.Dequeue();
-						foreach (string subfile in Directory.GetDirectories(strPath)) {
-							if (Directory.Exists(subfile)) { Q.Enqueue(subfile); }
-						}
-
-						foreach (string subfile in Directory.GetFiles(strPath)) {
-							if (File.Exists(subfile)) {
-								SongData sData = new SongData() { strFilePath = subfile };
-								isOK = TagLibrary.InsertTagInDatabase(sData);
-
-								if (isOK) {
-									listAdd.Add(sData);
-								}
-							}
-						}
-					}
-				} else if (File.Exists(filePath)) {
-					SongData sData = new SongData() { strFilePath = filePath };
-					isOK = TagLibrary.InsertTagInDatabase(sData);
-
-					if (isOK) {
-						listAdd.Add(sData);
-					}
-				}
-			}
-
-			FileAdd(listAdd);
-			RefreshSongList(listAdd);
-		}
-
-		private void FileAdd(List<SongData> listAdd) {
-			// Extract Sort Index
-			foreach (SongData sData in listAdd) {
-				sData.nID = SongData.nCount;
-
-				int nHeaderIndex = FileIO.GetIndexerHeaderFrom(sData.strTitle); 
-
-				sData.strSortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.strTitle);
-				sData.nHeadIndex = FileIO.IndexUnique.IndexOf(FileIO.IndexValue[nHeaderIndex]);
-
-				ListSong.Add(sData);
-				SongData.DictSong.Add(SongData.nCount, sData);
-				SongData.nCount++;
-
-				TitleTree.AddToTree(sData.nID);
-
-				Grid grid = CustomControl.GetListItemButton(sData, true);
-				SongData.DictSong[sData.nID].gBase = grid;
-				stackList.Children.Add(grid);
-
-				((Button)grid.Children[3]).Click += SongListItem_Click;
-				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
-			}
-		}
-
-		#endregion
-
-		#region Indexer event
-
+		// Indexer
+		bool ContextBlock = false;
 		private void gridIndexerRoot_MouseDown(object sender, MouseButtonEventArgs e) {
 			if (e.RightButton == MouseButtonState.Pressed) {
-				OneTimeCancel = true;
+				ContextBlock = true;
 			}
 			gridIndexerRoot.Visibility = Visibility.Collapsed;
 		}
-
 		private void buttonIndexer_Click(object sender, RoutedEventArgs e) {
 			if (!Pref.isListVisible) { return; }
 			if (gridIndexerRoot.Visibility == Visibility.Visible) {
@@ -203,94 +284,31 @@ namespace Simplayer4 {
 				gridIndexerRoot.BeginAnimation(Grid.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120)));
 			}
 		}
-
 		private void stackList_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
 			if (e.MiddleButton == MouseButtonState.Pressed) {
 				buttonIndexer.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 			}
 		}
+		private void buttonIndexerSort_Click(object sender, RoutedEventArgs e) {
+			SortList();
 
-		#endregion
+			ShuffleList();
+			SaveSongList();
+			SavePreference();
 
-		#region Playing Control Event
-
-		bool isPlayTimeMouseDown = false;
-		private void gridPlayTime_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
-			e.Handled = true;
-			if (Pref.isPlaying == 0) { return; }
-			double mouseMovingPixel = e.GetPosition(gridPlayTime).X;
-			mouseMovingPixel = Math.Min(gridPlayTime.ActualWidth, mouseMovingPixel);
-			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
-
-			try {
-				PlayClass.mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayTime.ActualWidth) * PlayClass.mp.NaturalDuration.TimeSpan.TotalSeconds));
-				rectPlayTime.Width = mouseMovingPixel;
-			} catch { }
-
-			isPlayTimeMouseDown = true;
-			gridPlayTime.CaptureMouse();
 		}
 
-		private void gridPlayTime_PreviewMouseUp(object sender, MouseButtonEventArgs e) {
-			isPlayTimeMouseDown = false;
-			gridPlayTime.ReleaseMouseCapture();
+		// List show + hide
+		private void ListToggle_Click(object sender, RoutedEventArgs e) {
+			ToggleList();
 		}
-
-		void gridPlayTime_PreviewMouseMove(object sender, MouseEventArgs e) {
-			if (Pref.isPlaying == 0) { return; }
-			if (!isPlayTimeMouseDown) { return; }
-			double mouseMovingPixel = e.GetPosition(gridPlayTime).X;
-			mouseMovingPixel = Math.Min(gridPlayTime.ActualWidth, mouseMovingPixel);
-			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
-
-			try {
-				PlayClass.mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayTime.ActualWidth) * PlayClass.mp.NaturalDuration.TimeSpan.TotalSeconds));
-				rectPlayTime.Width = mouseMovingPixel;
-			} catch { }
-		}
-		#endregion
-
-		#region Volume Control Event
-
-		bool isVolumeMouseDown = false;
-		private void gridVolume_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
-			e.Handled = true;
-			double mouseMovingPixel = e.GetPosition(gridVolume).X;
-			mouseMovingPixel = Math.Min(50, mouseMovingPixel);
-			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
-
-			PlayClass.mp.Volume = mouseMovingPixel / 50;
-			rectVolume.Width = mouseMovingPixel;
-
-			isVolumeMouseDown = true;
-			gridVolume.CaptureMouse();
-		}
-
-		private void gridVolume_PreviewMouseUp(object sender, MouseButtonEventArgs e) {
-			isVolumeMouseDown = false;
-			gridVolume.ReleaseMouseCapture();
-		}
-
-		private void gridVolume_PreviewMouseMove(object sender, MouseEventArgs e) {
-			if (!isVolumeMouseDown) { return; }
-			double mouseMovingPixel = e.GetPosition(gridVolume).X;
-			mouseMovingPixel = Math.Min(50, mouseMovingPixel);
-			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
-
-			//textIndex.Text = mp.Volume.ToString();
-
-			PlayClass.mp.Volume = mouseMovingPixel / 50;
-			rectVolume.Width = mouseMovingPixel;
-		}
-		#endregion
-
 		private void ToggleList() {
 			Pref.isListVisible = !Pref.isListVisible;
-			double nTowardHeight = Pref.isListVisible ? Pref.nListHeight : 192;
+			double nTowardHeight = Pref.isListVisible ? Pref.ListHeight : 192;
 			if (!Pref.isListVisible) {
 				gridIndexerRoot.Visibility = Visibility.Collapsed;
 				this.MinHeight = 192;
-				Pref.nListHeight = this.ActualHeight;
+				Pref.ListHeight = this.ActualHeight;
 			} else { this.MaxHeight = 3000; }
 
 			buttonHideList.Visibility = Pref.isListVisible ? Visibility.Visible : Visibility.Collapsed;
@@ -318,140 +336,225 @@ namespace Simplayer4 {
 				}
 			};
 			sb.Begin(this);
-			FileIO.SavePreference();
+			SavePreference();
 		}
 
-		private IntPtr MainWindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
-			if (msg == Win32.WM_HOTKEY && Pref.isHotkeyOn) {
-				if (wParam.ToString() == PPkey.ToString()) {
-					TogglePlayingStatus();
-				} else if (wParam.ToString() == Stopkey.ToString()) {
-					StopPlayer();
-				} else if (wParam.ToString() == Prevkey.ToString()) {
-					if (SongData.nNowPlaying >= 0) {
-						PlayClass.MusicPrepare(SongData.nNowPlaying, -1 * Pref.nRandomSeed, true);
-					}
-				} else if (wParam.ToString() == Nextkey.ToString()) {
-					if (SongData.nNowPlaying >= 0) {
-						PlayClass.MusicPrepare(SongData.nNowPlaying, Pref.nRandomSeed, true);
-					}
-				} else if (wParam.ToString() == Lyrkey.ToString()) {
-					Pref.isLyricsVisible = !Pref.isLyricsVisible;
-					buttonLyricsOn.Visibility = Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
-					buttonLyricsOff.Visibility = !Pref.isLyricsVisible ? Visibility.Visible : Visibility.Collapsed;
+		// File drag + drop event
+		private void MainWindow_PreviewDragLeave(object sender, DragEventArgs e) {
+			gridDrop.Visibility = Visibility.Collapsed;
+		}
+		private void MainWindow_PreviewDragOver(object sender, DragEventArgs e) {
+			e.Handled = true;
+		}
+		private void MainWindow_PreviewDragEnter(object sender, DragEventArgs e) {
+			var dropPossible = e.Data != null && ((DataObject)e.Data).ContainsFileDropList();
+			if (dropPossible) { gridDrop.Visibility = Visibility.Visible; }
+		}
+		private void MainWindow_PreviewDrop(object sender, DragEventArgs e) {
+			gridDrop.Visibility = Visibility.Collapsed;
+			if (!(e.Data is DataObject) || !((DataObject)e.Data).ContainsFileDropList()) { return; }
 
-					LyricsWindow.ToggleLyrics(Pref.isLyricsVisible);
-					LyrWindow.Checked = Pref.isLyricsVisible;
-					FileIO.SavePreference();
-				} else if (wParam.ToString() == SynPkey.ToString()) {
-					if (Pref.isPlaying != 0) {
-						LyricsWindow.ChangeOffset(-200);
+			Queue<string> Q = new Queue<string>();
+			string strPath;
+			bool isOK;
+			List<SongData> listAdd = new List<SongData>();
+
+			// BFS
+			foreach (string filePath in ((DataObject)e.Data).GetFileDropList()) {
+				if (Directory.Exists(filePath)) {
+					Q.Enqueue(filePath);
+
+					for (; ; ) {
+						if (Q.Count == 0) { break; }
+						strPath = Q.Dequeue();
+						foreach (string subfile in Directory.GetDirectories(strPath)) {
+							if (Directory.Exists(subfile)) { Q.Enqueue(subfile); }
+						}
+
+						foreach (string subfile in Directory.GetFiles(strPath)) {
+							if (File.Exists(subfile)) {
+								SongData sData = new SongData() { FilePath = subfile };
+								isOK = TagLibrary.InsertTagInDatabase(ref sData);
+
+								if (isOK) {
+									listAdd.Add(sData);
+								}
+							}
+						}
 					}
-				} else if (wParam.ToString() == SynNkey.ToString()) {
-					if (Pref.isPlaying != 0) {
-						LyricsWindow.ChangeOffset(200);
+				} else if (File.Exists(filePath)) {
+					SongData sData = new SongData() { FilePath = filePath };
+					isOK = TagLibrary.InsertTagInDatabase(ref sData);
+
+					if (isOK) {
+						listAdd.Add(sData);
 					}
-				} else if (wParam.ToString() == LaunchKey.ToString()) {
-					ActivateWindow();
-					if (!Pref.isListVisible) { ToggleList(); }
 				}
-				handled = true;
-			}
-			return IntPtr.Zero;
-		}
-
-		private void ActivateWindow() {
-			if (Pref.isTray) {
-				this.WindowState = WindowState.Normal;
-				Pref.isShowing = true;
-				this.Topmost = false;
-				this.Topmost = Pref.isTopMost;
-
-				new AltTab().ShowAltTab(this);
-				this.BeginAnimation(Window.OpacityProperty,
-					new DoubleAnimation(1, TimeSpan.FromMilliseconds(200)) {
-						EasingFunction = new QuarticEase() { EasingMode = EasingMode.EaseOut }
-					});
-				this.Activate();
-			} else {
-				this.WindowState = WindowState.Normal;
-			}
-		}
-
-		public void ShowMessage(string message, double dTimeout) {
-			Storyboard sb = new Storyboard();
-
-			if (dTimeout > 0) {
-				ThicknessAnimation ta1 = new ThicknessAnimation(new Thickness(0, -30, 0, 0), TimeSpan.FromMilliseconds(200)) {
-					BeginTime = TimeSpan.FromMilliseconds(100),
-					EasingFunction = new ExponentialEase() { Exponent = 5, EasingMode = EasingMode.EaseOut },
-				};
-				textMessage.Text = message;
-				Storyboard.SetTarget(ta1, gridMessage);
-				Storyboard.SetTargetProperty(ta1, new PropertyPath(Grid.MarginProperty));
-				sb.Children.Add(ta1);
 			}
 
-			ThicknessAnimation ta2 = new ThicknessAnimation(new Thickness(0), TimeSpan.FromMilliseconds(200)) {
-				BeginTime = TimeSpan.FromSeconds(dTimeout),
-				EasingFunction = new ExponentialEase() { Exponent = 5, EasingMode = EasingMode.EaseOut },
-			};
-
-			Storyboard.SetTarget(ta2, gridMessage);
-			Storyboard.SetTargetProperty(ta2, new PropertyPath(Grid.MarginProperty));
-
-			sb.Children.Add(ta2);
-			sb.Begin(this);
+			AddToLibrary(listAdd);
 		}
 
-		public bool ProcessCommandLineArgs(IList<string> args) {
-			ActivateWindow();
-			if (!Pref.isListVisible) { ToggleList(); }
-
-			if (args == null || args.Count == 0) { return true; }
-
-			return true;
+		// Key timeout
+		DispatcherTimer Timer_Keydown = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1), };
+		private void KeydownTimer_Tick(object sender, EventArgs e) {
+			(sender as DispatcherTimer).Stop();
+			TitleTree.LastPointer = 0;
 		}
 
-		public void ChangeThemeColor(Color color, bool isSave = true) {
-			MainColor = color;
-			grideffectShadow.BeginAnimation(DropShadowEffect.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
-			gStop1.BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(color, TimeSpan.FromMilliseconds(250)));
-
-			Application.Current.Resources["sColor"] = new SolidColorBrush(MainColor);
-			Application.Current.Resources["cColor"] = Color.FromArgb(255, MainColor.R, MainColor.G, MainColor.B);
-			CustomControl.sColor = MainBrush = FindResource("sColor") as SolidColorBrush;
-
-			if (isSave) { FileIO.SavePreference(); }
-		}
-
-		private void imageAlbumart_MouseDown(object sender, MouseButtonEventArgs e) {
-			if (SongData.nNowSelected < 0 || !SongData.DictSong.ContainsKey(SongData.nNowPlaying)) { return; }
-
-			ChangeSelection(SongData.nNowPlaying);
-			ScrollingList(SongData.DictSong[SongData.nNowPlaying].nPosition, 0);
-		}
-
-		private void ChangeSelection(int tag) {
-			if (SongData.nNowSelected >= 0 && SongData.DictSong.ContainsKey(SongData.nNowSelected)) {
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.Normal;
-				((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).Foreground = Brushes.Black;
-			}
-			SongData.nNowSelected = tag;
-
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			((TextBlock)SongData.DictSong[SongData.nNowSelected].gBase.Children[0]).FontWeight = FontWeights.ExtraBold;
-		}
-
-		private void dtmOverlay_Tick(object sender, EventArgs e) {
+		// Now playing animated icon
+		DispatcherTimer PlayingIconTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(200), IsEnabled = true };
+		int OpacityMaskIndex = 0;
+		private void PlayingIconTimer_Tick(object sender, EventArgs e) {
 			if (Pref.isPlaying <= 0) { return; }
 			GridNowPlay.OpacityMask = ImgNowPlayArray[(++OpacityMaskIndex) % 3];
 		}
 
-		private void OptionColorBinder(TextBlock txt, bool b) {
-			if (b) {
-				txt.SetResourceReference(TextBlock.ForegroundProperty, "sColor");
-			} else { txt.Foreground = Brushes.LightGray; }
+		// Albumart mousedown
+		private void imageAlbumart_MouseDown(object sender, MouseButtonEventArgs e) {
+			if (!SongData.DictSong.ContainsKey(SongData.NowPlaying)) { return; }
+
+			ChangeSelection(SongData.NowPlaying);
+			ScrollingList(SongData.DictSong[SongData.NowPlaying].Position, 1);
+		}
+
+		// Song item click
+		private void SongListItem_Click(object sender, RoutedEventArgs e) {
+			ChangeSelection((int)((Button)sender).Tag);
+
+			if (SongData.NowSelected == nPrevMovingIndex || !Pref.isOneClickPlaying) { return; }
+
+			ShuffleList();
+			MusicPrepare(SongData.NowSelected, 0, false);
+		}
+		private void SongListItem_DoubleClick(object sender, MouseButtonEventArgs e) {
+			if (Pref.isOneClickPlaying) { return; }
+
+			ShuffleList();
+			MusicPrepare(SongData.NowSelected, 0, false);
+		}
+
+		// Application keydown
+		private void Window_KeyDown(object sender, KeyEventArgs e) {
+			if (!Pref.isShowing) { return; }
+
+			switch (e.Key) {
+				case Key.Space:
+					TogglePlayingStatus();
+					return;
+				case Key.Left:
+					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
+						try {
+							mp.Position = new TimeSpan(0, 0, (int)mp.Position.TotalSeconds - 3);
+						} catch { }
+					} else {
+						if (SongData.NowPlaying >= 0) {
+							MusicPrepare(SongData.NowPlaying, -1 * Pref.RandomSeed, false);
+						}
+					}
+					return;
+				case Key.Right:
+					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
+						try {
+							mp.Position = new TimeSpan(0, 0, (int)mp.Position.TotalSeconds + 3);
+						} catch { }
+					} else {
+						if (SongData.NowPlaying >= 0) {
+							MusicPrepare(SongData.NowPlaying, Pref.RandomSeed, false);
+						}
+					}
+
+					return;
+				case Key.OemQuestion:
+					ToggleList();
+					return;
+				case Key.Back:
+					buttonPref.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+					return;
+				case Key.Escape:
+					buttonMinimize.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+					return;
+			}
+
+			if (Pref.isPrefVisible) { return; }
+
+			switch (e.Key) {
+				case Key.Enter:
+					ShuffleList();
+					MusicPrepare(SongData.NowSelected, 0, false);
+					return;
+				case Key.Delete:
+					FileDelete(SongData.NowSelected);
+					return;
+			}
+
+			int nIndex = SongData.DictSong.Count * -1, nPrevIndex = SongData.NowSelected;
+			if (SongData.DictSong.ContainsKey(SongData.NowSelected)) {
+				nIndex = SongData.DictSong[SongData.NowSelected].Position;
+			}
+
+			bool isSelectionChange = false;
+			if (!Pref.isPrefVisible && Pref.isListVisible) {
+				isSelectionChange = true;
+				switch (e.Key) {
+					case Key.Up: nIndex--; break;
+					case Key.Down: nIndex++; break;
+					case Key.PageUp: nIndex -= (int)(gridListArea.ActualHeight / 40); break;
+					case Key.PageDown: nIndex += (int)(gridListArea.ActualHeight / 40); break;
+					case Key.Home: nIndex = 0; break;
+					case Key.End: nIndex = SongData.DictSong.Count - 1; break;
+					case Key.Enter: break;
+					default: isSelectionChange = false; break;
+				}
+			}
+
+			if (isSelectionChange) {
+				nIndex = Math.Max(nIndex, 0);
+				nIndex = Math.Min(nIndex, SongData.DictSong.Count - 1);
+
+				ChangeSelection(PositionArray[nIndex]);
+
+				ScrollingList(nIndex, -1);
+				return;
+			}
+
+			// Indexer shortcut
+
+			if (!Pref.isSorted) { return; }
+
+			int nKeyIndex = -1, nStart = 15, nEnd = 40;
+			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) {
+				nStart = 1; nEnd = 14;
+			} else if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
+				nStart = 41; nEnd = 50;
+			}
+
+			if (e.Key.ToString()[0] == 'D' && Char.IsNumber(e.Key.ToString(), e.Key.ToString().Length - 1)) { nKeyIndex = 0; }
+
+			for (int i = nStart; i <= nEnd; i++) {
+				if (IndexHeader[i].ToString() == e.Key.ToString()) {
+					nKeyIndex = i;
+				}
+			}
+
+			if (nKeyIndex >= 0) {
+				if (!Pref.isListVisible) { ToggleList(); }
+
+				// Alphabet
+				if (nStart == 15 && nEnd == 40) {
+					Timer_Keydown.Stop();
+					Timer_Keydown.Start();
+
+					int idx = TitleTree.GetPositionByHeader(IndexHeader[nKeyIndex]);
+
+					if (idx >= 0) {
+						ChangeSelection(idx);
+						ScrollingList(SongData.DictSong[idx].Position, 0);
+					}
+				} else {
+					LaunchIndexerKey(nKeyIndex);
+				}
+			}
 		}
 	}
 }

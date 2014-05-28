@@ -8,20 +8,19 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Simplayer4 {
-	public class FileIO {
-		public static string ffIcon = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ico";
-		static string ffPrevList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ini";
-		static string ffPrevPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4Pref.ini";
+	public partial class MainWindow : Window {
+		public string ffIcon = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ico";
+		string ffPrevList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4.ini";
+		string ffPrevPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4Pref.ini";
 
-		static string ffList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4.ini";
-		static string ffPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4Pref.ini";
+		string ffList = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4.ini";
+		string ffPref = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4\Simplayer4Pref.ini";
 
-		static string ffFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4";
-		public static DispatcherTimer dtmSave;
+		string ffFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Simplayer4";
 
-		public static void ReadPreference() {
-			dtmSave = new DispatcherTimer() { Interval = TimeSpan.FromMinutes(1), IsEnabled = false };
-			dtmSave.Tick += dtmSave_Tick;
+		public void ReadPreference() {
+			VolumeSaveTimer.Tick += VolumeSaveTimer_Tick;
+			VolumeSaveTimer.Start();
 
 			// Make directory
 			if (!Directory.Exists(ffFolder)) { Directory.CreateDirectory(ffFolder); }
@@ -63,20 +62,20 @@ namespace Simplayer4 {
 					case "list": Pref.isListVisible = Convert.ToBoolean(strInnerSet[1]); break;
 					case "random":
 						if (Convert.ToBoolean(strInnerSet[1])) {
-							Pref.nRandomSeed = 2;
+							Pref.RandomSeed = 2;
 						} else {
-							Pref.nRandomSeed = 1;
+							Pref.RandomSeed = 1;
 						}
 						break;
 					case "playall":
 						if (Convert.ToBoolean(strInnerSet[1])) {
-							Pref.nPlayingLoopSeed = 1;
+							Pref.PlayingLoopSeed = 1;
 						} else {
-							Pref.nPlayingLoopSeed = 0;
+							Pref.PlayingLoopSeed = 0;
 						}
 						break;
 					case "oneclick": Pref.isOneClickPlaying = Convert.ToBoolean(strInnerSet[1]); break;
-					case "volume": Pref.nVolume = Convert.ToInt32(strInnerSet[1]); break;
+					case "volume": Pref.Volume = Convert.ToInt32(strInnerSet[1]); break;
 					case "autosort": Pref.isAutoSort = Convert.ToBoolean(strInnerSet[1]); break;
 					case "sorted": Pref.isSorted = Convert.ToBoolean(strInnerSet[1]); break;
 					case "tray": Pref.isTray = Convert.ToBoolean(strInnerSet[1]); break;
@@ -87,26 +86,22 @@ namespace Simplayer4 {
 					case "theme":
 						string[] strSplit = strInnerSet[1].Split(',');
 						if (strSplit.Length == 1) {
-							Pref.nTheme = Math.Min(Convert.ToInt32(strInnerSet[1]), 6);
+							Pref.ThemeCode = Math.Min(Convert.ToInt32(strInnerSet[1]), 6);
 						} else {
 							int r = Convert.ToInt32(strSplit[0]);
 							int g = Convert.ToInt32(strSplit[1]);
 							int b = Convert.ToInt32(strSplit[2]);
 
-							Pref.nTheme = 7;
-							Pref.cTheme = Color.FromRgb((byte)r, (byte)g, (byte)b);
+							Pref.ThemeCode = 7;
+							Pref.ThemeColor = Color.FromRgb((byte)r, (byte)g, (byte)b);
 						}
 						break;
 				}
 			}
 		}
 
-		public static string IndexCaption = "0123456789ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZぁァあアぃィいイぅゥうウぇェえエぉォおオかカがガきキぎギくクぐグけケげゲこコごゴさサざザしシじジすスずズせセぜゼそソぞゾたタだダちチぢヂっッつツづヅてテでデとトどドなナにニぬヌねネのノはハばバぱパひヒびビぴピふフぶブぷプへヘべベぺペほホぼボぽポまマみミむムめメもモゃャやヤゅュゆユょョよヨらラりリるルれレろロゎヮわワをヲんンヴ―#";
-		public static string IndexValue = "1111111111ㄱㄱㄴㄷㄷㄹㅁㅂㅂㅅㅅㅇㅈㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZああああああああああああああああああああかかかかかかかかかかかかかかかかかかかかささささささささささささささささささささたたたたたたたたたたたたたたたたたたたたたたななななななななななははははははははははははははははははははははははははははははままままままままままややややややややややややららららららららららわわわわわわわわわわ#";
-		public static string IndexUnique = "1ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎABCDEFGHIJKLMNOPQRSTUVWXYZあかさたなはまやらわ#";
-
-		public static List<SongData> ReadSongList() {
-			List<SongData> listSong = new List<SongData>();
+		public List<SongData> ReadSongList() {
+			List<SongData> listInput = new List<SongData>();
 
 			StreamReader sr = new StreamReader(ffList);
 			string strList = sr.ReadToEnd(); sr.Close();
@@ -115,53 +110,32 @@ namespace Simplayer4 {
 				string[] strInnerSet = str.Split(new string[] { "__simplayer__" }, StringSplitOptions.RemoveEmptyEntries);
 
 				SongData sData = new SongData() {
-					strFilePath = strInnerSet[0],
-					strTitle = strInnerSet[1],
-					strDuration = strInnerSet[2],
-					nID = SongData.nCount,
+					FilePath = strInnerSet[0],
+					Title = strInnerSet[1],
+					DurationString = strInnerSet[2],
 				};
 
-				int nHeaderIndex = GetIndexerHeaderFrom(sData.strTitle);
-
-				sData.strSortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.strTitle);
-				sData.nHeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
-
-				listSong.Add(sData);
-				SongData.DictSong.Add(SongData.nCount, sData);
-				SongData.nCount++;
-
-				TitleTree.AddToTree(sData.nID);
+				listInput.Add(sData);
 			}
 
-			if (Pref.isAutoSort) {
-				listSong.Sort(new SortByValue());
-			}
-			return listSong;
+			return listInput;
 		}
 
-		public static int GetIndexerHeaderFrom(string songTitle) {
-			char cHead = HangulDevide(songTitle.ToUpper())[0];
-			int idx = IndexCaption.IndexOf(cHead);
-			if (idx < 0) { idx += IndexCaption.Length; }
-
-			return idx;
-		}
-
-		public static void SaveSongList() {
+		public void SaveSongList() {
 			using (StreamWriter sw = new StreamWriter(ffList)) {
-				foreach (int nIndex in PlayClass.nPositionArray) {
-					SongData sData = SongData.DictSong[nIndex];
-					sw.WriteLine(sData.strFilePath + "__simplayer__" + sData.strTitle + "__simplayer__" + sData.strDuration);
+				foreach (SongData sData in ListSong) {
+					sw.WriteLine(sData.FilePath + "__simplayer__" + sData.Title + "__simplayer__" + sData.DurationString);
 				}
 			}
 		}
 
-		public static void dtmSave_Tick(object sender, EventArgs e) {
-			Pref.nVolume = (int)(PlayClass.mp.Volume * 50);
+		public DispatcherTimer VolumeSaveTimer = new DispatcherTimer() { Interval = TimeSpan.FromMinutes(1), IsEnabled = false };
+		public void VolumeSaveTimer_Tick(object sender, EventArgs e) {
+			Pref.Volume = (int)(mp.Volume * 50);
 			SavePreference();
 		}
 
-		public static void SavePreference() {
+		public void SavePreference() {
 			using (StreamWriter sw = new StreamWriter(ffPref)) {
 				sw.WriteLine(string.Format("autosort={0}", Pref.isAutoSort));
 				sw.WriteLine(string.Format("list={0}", Pref.isListVisible));
@@ -169,56 +143,19 @@ namespace Simplayer4 {
 				sw.WriteLine(string.Format("notify={0}", Pref.isNofifyOn));
 				sw.WriteLine(string.Format("oneclick={0}", Pref.isOneClickPlaying));
 				sw.WriteLine(string.Format("sorted={0}", Pref.isSorted));
-				sw.WriteLine(string.Format("playall={0}", Pref.nPlayingLoopSeed == 1 ? true : false));
-				sw.WriteLine(string.Format("random={0}", Pref.nRandomSeed == 2 ? true : false));
+				sw.WriteLine(string.Format("playall={0}", Pref.PlayingLoopSeed == 1 ? true : false));
+				sw.WriteLine(string.Format("random={0}", Pref.RandomSeed == 2 ? true : false));
 				sw.WriteLine(string.Format("tray={0}", Pref.isTray));
 				sw.WriteLine(string.Format("hotkey={0}", Pref.isHotkeyOn));
 				sw.WriteLine(string.Format("topmost={0}", Pref.isTopMost));
-				sw.WriteLine(string.Format("volume={0}", (int)Pref.nVolume));
+				sw.WriteLine(string.Format("volume={0}", (int)Pref.Volume));
 				sw.WriteLine(string.Format("lyrright={0}",Pref.isLyricsRight));
-				if (Pref.nTheme < 7) {
-					sw.WriteLine(string.Format("theme={0}", (int)Pref.nTheme));
+				if (Pref.ThemeCode < 7) {
+					sw.WriteLine(string.Format("theme={0}", (int)Pref.ThemeCode));
 				} else {
-					sw.WriteLine(string.Format("theme={0},{1},{2}", (int)Pref.cTheme.R, (int)Pref.cTheme.G, (int)Pref.cTheme.B));
+					sw.WriteLine(string.Format("theme={0},{1},{2}", (int)Pref.ThemeColor.R, (int)Pref.ThemeColor.G, (int)Pref.ThemeColor.B));
 				}
 			}
-		}
-
-		public class SortByValue : IComparer<SongData> {
-			public int Compare(SongData arg1, SongData arg2) {
-				if (arg1.strSortTag.IndexOf(arg2.strSortTag) == 0) { return 1; }
-				if (arg2.strSortTag.IndexOf(arg1.strSortTag) == 0) { return -1; }
-				return string.Compare(arg1.strSortTag, arg2.strSortTag);
-			}
-		}
-
-		public static string HangulDevide(string origStr) {
-			string rtStr = "";
-			for (int i = 0; i < origStr.Length; i++) {
-				char origChar = origStr[i];
-				if (origChar == ' ') { continue; }
-				int unicode = Convert.ToInt32(origChar);
-
-				uint jongCode = 0;
-				uint jungCode = 0;
-				uint choCode = 0;
-
-				if (unicode < 44032 || unicode > 55203) {
-					rtStr += origChar;
-					continue;
-				} else {
-					uint uCode = Convert.ToUInt32(origChar - '\xAC00');
-					jongCode = uCode % 28;
-					jungCode = ((uCode - jongCode) / 28) % 21;
-					choCode = ((uCode - jongCode) / 28) / 21;
-				}
-				char[] choChar = new char[] { 'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ' };
-				char[] jungChar = new char[] { 'ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ' };
-				char[] jongChar = new char[] { ' ', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ' };
-				rtStr += choChar[choCode].ToString() + jungChar[jungCode].ToString() + jongChar[jongCode].ToString();
-				rtStr = rtStr.Replace(" ", "");
-			}
-			return rtStr;
 		}
 	}
 }

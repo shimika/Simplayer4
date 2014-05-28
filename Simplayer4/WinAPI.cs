@@ -5,7 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 
 namespace Simplayer4 {
-	internal static class Win32 {
+	internal static class WinAPI {
 		[DllImport("user32.dll")]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);

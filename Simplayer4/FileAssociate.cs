@@ -8,6 +8,8 @@ using System.Text;
 using System.Windows;
 using Microsoft.Win32;
 
+// It's dead source
+
 namespace Simplayer4 {
 	public class FileAssociate {
 		private const string SUFFIX = "mp3";      // the suffix you want to associate with this program

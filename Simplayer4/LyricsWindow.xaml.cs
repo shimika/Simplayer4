@@ -71,19 +71,19 @@ namespace Simplayer4 {
 		int nOffset = 0;
 
 		public void InitLyrics(SongData nowPlayingData) {
-			lS.Text = string.Format("{0}{1}{2}", nowPlayingData.strTitle, nowPlayingData.strArtist == "" ? "" : " - ", nowPlayingData.strArtist);
+			lS.Text = string.Format("{0}{1}{2}", nowPlayingData.Title, nowPlayingData.Artist == "" ? "" : " - ", nowPlayingData.Artist);
 			lT.Text = string.Format("0:00 / {0}:{1:D2}", (int)nowPlayingData.Duration.TotalMinutes, nowPlayingData.Duration.Seconds);
-			ChangeLabels(nowPlayingData.strTitle, nowPlayingData.strArtist, nowPlayingData.strAlbum);
+			ChangeLabels(nowPlayingData.Title, nowPlayingData.Artist, nowPlayingData.Album);
 			lO.Text = "Offset: 0ms";
 
-			strFilePath = nowPlayingData.strFilePath;
+			strFilePath = nowPlayingData.FilePath;
 			strMD5 = new Lyrics().GetSongMD5FromFile(strFilePath);
 
 			if (dictOffset.ContainsKey(strMD5)) {
 				nOffset = dictOffset[strMD5];
 				ChangeOffset(0);
 			}
-			Task.Factory.StartNew(() => GetLyricsByFilePath(nowPlayingData.strFilePath));
+			Task.Factory.StartNew(() => GetLyricsByFilePath(nowPlayingData.FilePath));
 		}
 
 		private void GetLyricsByFilePath(string strPath) {

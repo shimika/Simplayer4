@@ -140,7 +140,7 @@ namespace Simplayer4 {
 			buttonIndexerSort.Visibility = !Pref.isSorted ? Visibility.Visible : Visibility.Collapsed;
 
 			rectVolume.Width = Pref.Volume;
-			mp.Volume = Pref.Volume / 50;
+			MusicPlayer.Volume = Pref.Volume / 50;
 		}
 
 		private void buttonClickOne_Click(object sender, RoutedEventArgs e) {

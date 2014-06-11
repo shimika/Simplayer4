@@ -17,35 +17,28 @@ namespace Simplayer4 {
 	/// ChangeNotification.xaml에 대한 상호 작용 논리
 	/// </summary>
 	public partial class ChangeNotification : Window {
-		public ChangeNotification() {
+		string before, after, sortinfo;
+
+		public ChangeNotification(string b, string a, string s) {
 			InitializeComponent();
+
 			this.Left = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea.Left + 25;
 			this.Top = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea.Top + 150;
 			Loaded += delegate(object sender, RoutedEventArgs e) { new AltTab().HideAltTab(this); };
 			buttonClose.Click += buttonClose_Click;
+
+			before = b; after = a; sortinfo = s;
 		}
 
-		private void buttonClose_Click(object sender, RoutedEventArgs e) {
-			this.Topmost = false;
-			this.Topmost = true;
-			Storyboard sb = new Storyboard();
-
-			DoubleAnimation fin;
-			fin = new DoubleAnimation(0, TimeSpan.FromMilliseconds(0));
-
-			Storyboard.SetTarget(fin, this);
-
-			Storyboard.SetTargetProperty(fin, new PropertyPath(Window.OpacityProperty));
-
-			sb.Children.Add(fin);
-
-			sb.Begin(this);
-		}
-
+		private void buttonClose_Click(object sender, RoutedEventArgs e) { this.Close(); }
 		public void AnimateWindow() {
+			textBefore.Text = before;
+			textAfter.Text = after;
+			textScript.Text = sortinfo;
+
 			this.Topmost = false;
 			this.Topmost = true;
-			Storyboard sb = new Storyboard();
+			Storyboard sb = new Storyboard() { Duration = TimeSpan.FromSeconds(5) };
 
 			DoubleAnimation fin, fout;
 			fin = new DoubleAnimation(1, TimeSpan.FromMilliseconds(250));
@@ -59,8 +52,13 @@ namespace Simplayer4 {
 			Storyboard.SetTargetProperty(fout, new PropertyPath(Window.OpacityProperty));
 
 			sb.Children.Add(fin); sb.Children.Add(fout);
+			sb.Completed += sb_Completed;
 
 			sb.Begin(this);
+		}
+
+		private void sb_Completed(object sender, EventArgs e) {
+			this.Close();
 		}
 	}
 }

@@ -333,14 +333,14 @@
                             </Grid.ColumnDefinitions>
                             <Grid x:Name="gridPlayStatus" Background="Transparent">
                                 <Rectangle x:Name="rectTotalTime" HorizontalAlignment="Stretch" VerticalAlignment="Center" Fill="LightGray" Height="3"/>
-                                <Rectangle x:Name="rectPlayTime" Width="50" HorizontalAlignment="Left" VerticalAlignment="Center" Fill="{DynamicResource sColor}" Height="3"/>
+                                <Rectangle x:Name="rectPlayTime" Width="50" HorizontalAlignment="Left" VerticalAlignment="Center" Fill="Black" Height="3"/>
                             </Grid>
                             <Grid Grid.Column="1" HorizontalAlignment="Left" Width="25" Height="25" VerticalAlignment="Center">
                                 <Image Source="/Resources/iconVolumeBlack.png" Width="13" Height="13" Margin="8,-2,0,0"/>
                             </Grid>
                             <Grid x:Name="gridVolume" Grid.Column="1" Margin="30,0,0,0" Background="Transparent">
                                 <Rectangle Width="50" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="LightGray" Height="3"/>
-                                <Rectangle x:Name="rectVolume" Width="20" HorizontalAlignment="Left" VerticalAlignment="Center" Fill="{DynamicResource sColor}" Height="3"/>
+                                <Rectangle x:Name="rectVolume" Width="20" HorizontalAlignment="Left" VerticalAlignment="Center" Fill="Black" Height="3"/>
                             </Grid>
                         </Grid>
                     </Grid>

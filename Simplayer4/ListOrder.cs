@@ -31,61 +31,68 @@ namespace Simplayer4 {
 			// Get List<SongData> (contains: Title, DurationString, FilePath)
 			// Construct new SongData (contains: ID, SortTag, HeadIndex, ...)
 
-			foreach (SongData sData in listAdd) {
-				sData.ID = SongData.IDCount;
 
-				int nHeaderIndex = GetIndexerHeaderFrom(sData.Title);
-				sData.SortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.Title);
-				sData.HeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
-				sData.Position = SongData.DictSong.Count;
+				foreach (SongData sData in listAdd) {
+					sData.ID = SongData.IDCount;
 
-				SongData.DictSong.Add(SongData.IDCount, sData);
-				SongData.IDCount++;
+					int nHeaderIndex = GetIndexerHeaderFrom(sData.Title);
+					sData.SortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.Title);
+					sData.HeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
+					sData.Position = SongData.DictSong.Count;
 
-				Grid grid = GetListItemButton(sData, isNew);
-				SongData.DictSong[sData.ID].GridBase = grid;
-				stackList.Children.Add(grid);
+					if (SongData.DictSong.ContainsKey(SongData.IDCount)) {
+						MessageBox.Show(SongData.IDCount.ToString());
+					}
 
-				((Button)grid.Children[3]).Click += SongListItem_Click;
-				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
+					SongData.DictSong.Add(SongData.IDCount, sData);
+					SongData.IDCount++;
 
-			}
+					Grid grid = GetListItemButton(sData, isNew);
+					SongData.DictSong[sData.ID].GridBase = grid;
+					stackList.Children.Add(grid);
 
-			if (isNew) {
-				ShowMessage(string.Format("{0}개의 음악이 추가되었습니다.", listAdd.Count), 2);
-			}
+					((Button)grid.Children[3]).Click += SongListItem_Click;
+					((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
 
-			// Push value to tree
-			RefreshSortedPosition();
-			foreach (SongData sData in listAdd) {
-				TitleTree.AddToTree(sData.ID);
-			}
-
-			if (Pref.isAutoSort) {
-				SortList();
-
-				int firstIndex = (from item in listAdd select SongData.DictSong[item.ID].Position).Min();
-				ScrollingList(firstIndex, 0);
-
-			} else if (listAdd.Count > 0) {
-				ListSong = SongData.DictSong.Values.ToList().OrderBy(x => x.Position).ThenBy(x => x.ID).ToList();
-				RefreshAbsolutePositionByList();
-
-				if (isNew || !Pref.isSorted) {
-					gridIndexer.Visibility = Visibility.Collapsed;
-					buttonIndexerSort.Visibility = Visibility.Visible;
-
-					Pref.isSorted = false;
 				}
 
+	
+			try {
 				if (isNew) {
-					ScrollingList(stackList.Children.Count - 1, -1);
+					ShowMessage(string.Format("{0}개의 음악이 추가되었습니다.", listAdd.Count), 2);
 				}
-			}
+				
+				// Push value to tree
+				RefreshSortedPosition();
+				TitleTree.RefreshTagDB();
 
-			ShuffleList();
-			SaveSongList();
-			SavePreference();
+				if (Pref.isAutoSort) {
+					SortList();
+
+					int firstIndex = (from item in listAdd select SongData.DictSong[item.ID].Position).Min();
+					ScrollingList(firstIndex, 0);
+
+				} else if (listAdd.Count > 0) {
+					ListSong = SongData.DictSong.Values.ToList().OrderBy(x => x.Position).ThenBy(x => x.ID).ToList();
+					RefreshAbsolutePositionByList();
+
+					if (isNew || !Pref.isSorted) {
+						gridIndexer.Visibility = Visibility.Collapsed;
+						buttonIndexerSort.Visibility = Visibility.Visible;
+
+						Pref.isSorted = false;
+					}
+
+					if (isNew) {
+						ScrollingList(stackList.Children.Count - 1, -1);
+					}
+				}
+			} catch (Exception ex) {
+				MessageBox.Show(ex.Message);
+			}
+				ShuffleList();
+				SaveSongList();
+				SavePreference();
 		}
 
 		private void RefreshAbsolutePositionByList() {

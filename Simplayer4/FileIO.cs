@@ -131,8 +131,9 @@ namespace Simplayer4 {
 
 		public DispatcherTimer VolumeSaveTimer = new DispatcherTimer() { Interval = TimeSpan.FromMinutes(1), IsEnabled = false };
 		public void VolumeSaveTimer_Tick(object sender, EventArgs e) {
-			Pref.Volume = (int)(mp.Volume * 50);
+			Pref.Volume = (int)(MusicPlayer.Volume * 50);
 			SavePreference();
+			GC.Collect();
 		}
 
 		public void SavePreference() {

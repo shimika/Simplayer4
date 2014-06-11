@@ -76,6 +76,13 @@ namespace Simplayer4 {
 			// Key Timeout, Playing icon
 			Timer_Keydown.Tick += KeydownTimer_Tick;
 			PlayingIconTimer.Tick += PlayingIconTimer_Tick;
+
+			// Playing delay timer
+			TimerDelay.Tick += TimerDelay_Tick;
+
+			// Media Player events
+			MusicPlayer.MediaEnded += MusicPlayer_MediaEnded;
+			MusicPlayer.MediaFailed += MusicPlayer_MediaFailed;
 		}
 
 		// Global window event
@@ -86,7 +93,7 @@ namespace Simplayer4 {
 			grideffectShadow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.1, TimeSpan.FromMilliseconds(100)));
 		}
 		private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e) {
-			rectPlayTime.Width = rectTotalTime.ActualWidth * dPlayPerTotal;
+			rectPlayTime.Width = rectTotalTime.ActualWidth * PlayPerTotal;
 		}
 		private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
 			TrayNotify.Dispose();
@@ -190,7 +197,7 @@ namespace Simplayer4 {
 			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
 
 			try {
-				mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * mp.NaturalDuration.TimeSpan.TotalSeconds));
+				MusicPlayer.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * MusicPlayer.NaturalDuration.TimeSpan.TotalSeconds));
 				rectPlayTime.Width = mouseMovingPixel;
 			} catch { }
 
@@ -209,7 +216,7 @@ namespace Simplayer4 {
 			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
 
 			try {
-				mp.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * mp.NaturalDuration.TimeSpan.TotalSeconds));
+				MusicPlayer.Position = new TimeSpan(0, 0, (int)((mouseMovingPixel / gridPlayStatus.ActualWidth) * MusicPlayer.NaturalDuration.TimeSpan.TotalSeconds));
 				rectPlayTime.Width = mouseMovingPixel;
 			} catch { }
 		}
@@ -222,7 +229,7 @@ namespace Simplayer4 {
 			mouseMovingPixel = Math.Min(50, mouseMovingPixel);
 			mouseMovingPixel = Math.Max(0, mouseMovingPixel);
 
-			mp.Volume = mouseMovingPixel / 50;
+			MusicPlayer.Volume = mouseMovingPixel / 50;
 			rectVolume.Width = mouseMovingPixel;
 
 			isVolumeMouseDown = true;
@@ -240,7 +247,7 @@ namespace Simplayer4 {
 
 			//textIndex.Text = mp.Volume.ToString();
 
-			mp.Volume = mouseMovingPixel / 50;
+			MusicPlayer.Volume = mouseMovingPixel / 50;
 			rectVolume.Width = mouseMovingPixel;
 		}
 
@@ -259,6 +266,7 @@ namespace Simplayer4 {
 			TogglePlayingStatus();
 		}
 		private void TogglePlayingStatus() {
+			if (SongData.DictSong.Count == 0 && Pref.isPlaying == 0) { return; }
 			switch (Pref.isPlaying) {
 				case -1: ResumeMusic(); break;
 				case 0: MusicPrepare(-1, 1, true); break;
@@ -399,7 +407,7 @@ namespace Simplayer4 {
 		DispatcherTimer Timer_Keydown = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1), };
 		private void KeydownTimer_Tick(object sender, EventArgs e) {
 			(sender as DispatcherTimer).Stop();
-			TitleTree.LastPointer = 0;
+			TitleTree.ClearSearchTag();
 		}
 
 		// Now playing animated icon
@@ -445,7 +453,7 @@ namespace Simplayer4 {
 				case Key.Left:
 					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
 						try {
-							mp.Position = new TimeSpan(0, 0, (int)mp.Position.TotalSeconds - 3);
+							MusicPlayer.Position = new TimeSpan(0, 0, (int)MusicPlayer.Position.TotalSeconds - 3);
 						} catch { }
 					} else {
 						if (SongData.NowPlaying >= 0) {
@@ -456,7 +464,7 @@ namespace Simplayer4 {
 				case Key.Right:
 					if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) {
 						try {
-							mp.Position = new TimeSpan(0, 0, (int)mp.Position.TotalSeconds + 3);
+							MusicPlayer.Position = new TimeSpan(0, 0, (int)MusicPlayer.Position.TotalSeconds + 3);
 						} catch { }
 					} else {
 						if (SongData.NowPlaying >= 0) {
@@ -540,6 +548,7 @@ namespace Simplayer4 {
 			if (nKeyIndex >= 0) {
 				if (!Pref.isListVisible) { ToggleList(); }
 
+
 				// Alphabet
 				if (nStart == 15 && nEnd == 40) {
 					Timer_Keydown.Stop();
@@ -547,14 +556,31 @@ namespace Simplayer4 {
 
 					int idx = TitleTree.GetPositionByHeader(IndexHeader[nKeyIndex]);
 
+					//ShowMessage(TitleTree.SearchTag + " : " + (idx >= 0 ? SongData.DictSong[idx].Title : "-"));
+
 					if (idx >= 0) {
 						ChangeSelection(idx);
 						ScrollingList(SongData.DictSong[idx].Position, 0);
 					}
+
 				} else {
 					LaunchIndexerKey(nKeyIndex);
 				}
 			}
+		}
+
+		// Playing delay timer
+		private void TimerDelay_Tick(object sender, EventArgs e) {
+			(sender as DispatcherTimer).Stop();
+			isDelay = false;
+		}
+
+		// Media Player events
+		private void MusicPlayer_MediaEnded(object sender, EventArgs e) {
+			MusicPrepare(SongData.NowPlaying, Pref.PlayingLoopSeed * Pref.RandomSeed, false);
+		}
+		private void MusicPlayer_MediaFailed(object sender, ExceptionEventArgs e) {
+			MusicPrepare(SongData.NowPlaying, Pref.PlayingLoopSeed * PlayingDirection, false, true);
 		}
 	}
 }

@@ -35,10 +35,9 @@ namespace Simplayer4 {
 		Color MainColor = Colors.SlateBlue;
 
 		public PreviewWindow PrevWindow;
-		public ChangeNotification ChangeNotiWindow;
 		public LyricsWindow LyricsWindow;
 
-		string Version = "ver 4.1.0";
+		string Version = "ver 4.1.1";
 		public Grid GridNowPlay = null;
 		ImageBrush[] ImgNowPlayArray = new ImageBrush[3];
 
@@ -76,9 +75,6 @@ namespace Simplayer4 {
 			PrevWindow = new PreviewWindow();
 			PrevWindow.Show();
 
-			ChangeNotiWindow = new ChangeNotification();
-			ChangeNotiWindow.Show();
-
 			LyricsWindow = new LyricsWindow(Pref.isLyricsVisible);
 			LyricsWindow.Show();
 
@@ -104,6 +100,8 @@ namespace Simplayer4 {
 			};
 			GridNowPlay.SetResourceReference(Grid.BackgroundProperty, "sColor");
 			GridNowPlay.OpacityMask = ImgNowPlayArray[0];
+
+			GC.Collect();
 		}
 	}
 }

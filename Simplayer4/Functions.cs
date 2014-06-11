@@ -71,7 +71,7 @@ namespace Simplayer4 {
 		}
 
 		// Show error or info message
-		public void ShowMessage(string message, double dTimeout) {
+		public void ShowMessage(string message, double dTimeout = 3) {
 			Storyboard sb = new Storyboard();
 
 			if (dTimeout > 0) {
@@ -203,7 +203,7 @@ namespace Simplayer4 {
 			}
 			SongData.NowPlaying = -1;
 
-			mp.Stop();
+			MusicPlayer.Stop();
 		}
 
 		// Get BitmapImage from uri

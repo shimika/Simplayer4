@@ -32,36 +32,36 @@ namespace Simplayer4 {
 			// Construct new SongData (contains: ID, SortTag, HeadIndex, ...)
 
 
-				foreach (SongData sData in listAdd) {
-					sData.ID = SongData.IDCount;
+			foreach (SongData sData in listAdd) {
+				sData.ID = SongData.IDCount;
 
-					int nHeaderIndex = GetIndexerHeaderFrom(sData.Title);
-					sData.SortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.Title);
-					sData.HeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
-					sData.Position = SongData.DictSong.Count;
+				int nHeaderIndex = GetIndexerHeaderFrom(sData.Title);
+				sData.SortTag = string.Format("{0:D4}{1}", nHeaderIndex, sData.Title);
+				sData.HeadIndex = IndexUnique.IndexOf(IndexValue[nHeaderIndex]);
+				sData.Position = SongData.DictSong.Count;
 
-					if (SongData.DictSong.ContainsKey(SongData.IDCount)) {
-						MessageBox.Show(SongData.IDCount.ToString());
-					}
-
-					SongData.DictSong.Add(SongData.IDCount, sData);
-					SongData.IDCount++;
-
-					Grid grid = GetListItemButton(sData, isNew);
-					SongData.DictSong[sData.ID].GridBase = grid;
-					stackList.Children.Add(grid);
-
-					((Button)grid.Children[3]).Click += SongListItem_Click;
-					((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
-
+				if (SongData.DictSong.ContainsKey(SongData.IDCount)) {
+					MessageBox.Show(SongData.IDCount.ToString());
 				}
 
-	
+				SongData.DictSong.Add(SongData.IDCount, sData);
+				SongData.IDCount++;
+
+				Grid grid = GetListItemButton(sData, isNew);
+				SongData.DictSong[sData.ID].GridBase = grid;
+				stackList.Children.Add(grid);
+
+				((Button)grid.Children[3]).Click += SongListItem_Click;
+				((Button)grid.Children[3]).MouseDoubleClick += SongListItem_DoubleClick;
+
+			}
+
+
 			try {
 				if (isNew) {
 					ShowMessage(string.Format("{0}개의 음악이 추가되었습니다.", listAdd.Count), 2);
 				}
-				
+
 				// Push value to tree
 				RefreshSortedPosition();
 				TitleTree.RefreshTagDB();
@@ -90,9 +90,10 @@ namespace Simplayer4 {
 			} catch (Exception ex) {
 				MessageBox.Show(ex.Message);
 			}
-				ShuffleList();
-				SaveSongList();
-				SavePreference();
+
+			ShuffleList();
+			SaveSongList();
+			SavePreference();
 		}
 
 		private void RefreshAbsolutePositionByList() {

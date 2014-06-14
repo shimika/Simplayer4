@@ -121,6 +121,7 @@ namespace Simplayer4 {
 					g.FillRectangle(System.Drawing.Brushes.White, 1, 1, hw - 1, hw - 1);
 					g.DrawImage(bm, 0, 0, hw, hw);
 				}
+
 				bm.Dispose();
 				return result;
 			}

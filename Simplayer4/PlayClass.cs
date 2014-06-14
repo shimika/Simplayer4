@@ -125,7 +125,7 @@ namespace Simplayer4 {
 				if (SongData.DictSong.ContainsKey(SongData.NowPlaying)) {
 					((TextBlock)SongData.DictSong[SongData.NowPlaying].GridBase.Children[0]).TextDecorations = TextDecorations.Strikethrough;
 				}
-				MusicPrepare(SongData.NowPlaying, Pref.PlayingLoopSeed * PlayingDirection, false, true);
+				MusicPrepare(SongData.NowPlaying, PlayingDirection * Pref.RandomSeed, false, true);
 				return;
 			}
 

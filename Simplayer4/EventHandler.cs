@@ -580,7 +580,7 @@ namespace Simplayer4 {
 			MusicPrepare(SongData.NowPlaying, Pref.PlayingLoopSeed * Pref.RandomSeed, false);
 		}
 		private void MusicPlayer_MediaFailed(object sender, ExceptionEventArgs e) {
-			MusicPrepare(SongData.NowPlaying, Pref.PlayingLoopSeed * PlayingDirection, false, true);
+			MusicPrepare(SongData.NowPlaying, PlayingDirection * Pref.RandomSeed, false, true);
 		}
 	}
 }
